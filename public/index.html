@@ -5,43 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Video Generator Pro</title>
     <style>
-        /* Сучасні Figma-стилі */
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; box-sizing: border-box; }
-        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 500px; margin-bottom: 2rem; }
+        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 500px; margin-bottom: 2rem; transition: all 0.3s ease; }
         h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; font-weight: 700; }
         
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a4a4a; font-size: 14px; }
-        input { width: 100%; padding: 14px; margin-bottom: 1.5rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; transition: all 0.2s; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; transition: all 0.2s; }
         input:focus { border-color: #0052cc; box-shadow: 0 0 0 3px rgba(0,82,204,0.1); outline: none; }
         
-        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; }
+        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; margin-top: 10px; }
         button.primary-btn:hover { box-shadow: 0 6px 16px rgba(0,82,204,0.3); }
         button.primary-btn:active { transform: scale(0.98); }
         button.primary-btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
 
+        /* Стилі для розширених налаштувань */
+        .toggle-settings-btn { width: 100%; background: none; border: none; color: #666; font-size: 14px; font-weight: 600; cursor: pointer; padding: 10px; text-align: left; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; border-radius: 8px; transition: background 0.2s; }
+        .toggle-settings-btn:hover { background: #f4f5f7; color: #333; }
+        
+        .advanced-settings { display: none; background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease-out; }
+        .advanced-settings.active { display: block; }
+        
+        /* Повзунки */
+        .slider-container { margin-bottom: 1.5rem; }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .slider-val { font-weight: bold; color: #0052cc; }
+        input[type="range"] { width: 100%; margin: 0; cursor: pointer; accent-color: #0052cc; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
         /* Прогрес-бар */
         .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
-        
         #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; min-height: 20px; font-weight: 500; }
         
-        /* Кнопки дій */
         .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
-        .action-btn { flex: 1; padding: 12px; border: 1.5px solid #e1e4e8; background: white; border-radius: 10px; font-weight: 600; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .action-btn { flex: 1; padding: 12px; border: 1.5px solid #e1e4e8; background: white; border-radius: 10px; font-weight: 600; color: #333; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; }
         .action-btn:hover { background: #f8f9fa; border-color: #d1d5db; }
         
         #result { margin-top: 1.5rem; text-align: center; }
         video { width: 100%; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #000; }
         
-        /* Галерея проектів */
         .gallery { width: 100%; max-width: 800px; }
         .gallery h2 { font-size: 20px; color: #1a1a1a; margin-bottom: 1rem; padding-left: 5px; border-left: 4px solid #0052cc; }
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .gallery-card { background: white; padding: 12px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .gallery-card video { border-radius: 10px; margin-bottom: 10px; }
-        .gallery-card .prompt-text { font-size: 13px; color: #666; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .delete-btn { width: 100%; padding: 8px; background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
-        .delete-btn:hover { background: #ffccc7; }
+        .gallery-card video { border-radius: 10px; margin-bottom: 10px; width: 100%; }
+        .gallery-card .prompt-text { font-size: 13px; color: #666; margin-bottom: 10px; }
+        .delete-btn { width: 100%; padding: 8px; background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -55,13 +65,38 @@
     <label for="prompt">Що має відбуватися? (Промпт)</label>
     <input type="text" id="prompt" placeholder="Наприклад: water flowing, camera zoom in">
 
+    <button type="button" class="toggle-settings-btn" id="toggleSettingsBtn">
+        <span>⚙️</span> Розширені налаштування
+    </button>
+
+    <div class="advanced-settings" id="advancedSettingsPanel">
+        <label for="negPrompt">Негативний промпт (Чого уникати)</label>
+        <input type="text" id="negPrompt" placeholder="blur, deformed, ugly, watermark, text">
+
+        <div class="slider-container">
+            <div class="slider-header">
+                <label for="guidance">Точність (Guidance Scale)</label>
+                <span class="slider-val" id="guidanceVal">3.5</span>
+            </div>
+            <input type="range" id="guidance" min="1" max="10" step="0.1" value="3.5">
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-header">
+                <label for="steps">Кроки деталізації (Inference Steps)</label>
+                <span class="slider-val" id="stepsVal">30</span>
+            </div>
+            <input type="range" id="steps" min="10" max="50" step="1" value="30">
+        </div>
+
+        <label for="seed">Seed (Для повторення стилю)</label>
+        <input type="number" id="seed" placeholder="Залиште пустим для випадкового">
+    </div>
+
     <button id="btn" class="primary-btn">✨ Згенерувати відео</button>
 
-    <div id="progressContainer" class="progress-container">
-        <div id="progressBar" class="progress-bar"></div>
-    </div>
+    <div id="progressContainer" class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
     <p id="status"></p>
-    
     <div id="result"></div>
 </div>
 
@@ -71,7 +106,26 @@
 </div>
 
 <script>
-    // --- ГАЛЕРЕЯ (Local Storage) ---
+    // --- UI ЛОГІКА (Акордеон та Повзунки) ---
+    const toggleBtn = document.getElementById('toggleSettingsBtn');
+    const settingsPanel = document.getElementById('advancedSettingsPanel');
+    
+    toggleBtn.onclick = () => {
+        settingsPanel.classList.toggle('active');
+        toggleBtn.innerHTML = settingsPanel.classList.contains('active') 
+            ? '<span>⚙️</span> Приховати налаштування' 
+            : '<span>⚙️</span> Розширені налаштування';
+    };
+
+    const guidanceSlider = document.getElementById('guidance');
+    const guidanceVal = document.getElementById('guidanceVal');
+    guidanceSlider.oninput = function() { guidanceVal.innerHTML = this.value; }
+
+    const stepsSlider = document.getElementById('steps');
+    const stepsVal = document.getElementById('stepsVal');
+    stepsSlider.oninput = function() { stepsVal.innerHTML = this.value; }
+
+    // --- ГАЛЕРЕЯ ---
     function loadGallery() {
         const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
         const gallerySection = document.getElementById('gallerySection');
@@ -85,7 +139,7 @@
                     <div class="prompt-text">💭 ${video.prompt || 'Без промпту'}</div>
                     <button class="delete-btn" onclick="deleteVideo(${index})">🗑️ Видалити</button>
                 </div>
-            `).reverse().join(''); // Показуємо нові першими
+            `).reverse().join('');
         } else {
             gallerySection.style.display = 'none';
         }
@@ -93,28 +147,22 @@
 
     function saveToGallery(url, prompt) {
         const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
-        savedVideos.push({ url, prompt, date: new Date().toISOString() });
+        savedVideos.push({ url, prompt });
         localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
         loadGallery();
     }
 
     window.deleteVideo = function(index) {
         const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
-        // Оскільки ми відображаємо у зворотному порядку (.reverse()), індекс треба скоригувати
         const realIndex = savedVideos.length - 1 - index;
         savedVideos.splice(realIndex, 1);
         localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
         loadGallery();
     }
-
-    // Завантажуємо галерею при старті
     loadGallery();
 
-    // --- ФУНКЦІЇ ДЛЯ КНОПОК ---
     window.copyLink = function(url) {
-        navigator.clipboard.writeText(url).then(() => {
-            alert('✅ Посилання скопійовано!');
-        });
+        navigator.clipboard.writeText(url).then(() => alert('✅ Посилання скопійовано!'));
     }
 
     // --- ЛОГІКА ГЕНЕРАЦІЇ ---
@@ -123,16 +171,21 @@
         const resultDiv = document.getElementById('result');
         const progressBar = document.getElementById('progressBar');
         const progressContainer = document.getElementById('progressContainer');
+        const btn = document.getElementById('btn');
+
+        // Збираємо ВСІ дані з форми
         const imgUrl = document.getElementById('imgUrl').value;
         const prompt = document.getElementById('prompt').value;
-        const btn = document.getElementById('btn');
+        const negPrompt = document.getElementById('negPrompt').value;
+        const guidance = document.getElementById('guidance').value;
+        const steps = document.getElementById('steps').value;
+        const seed = document.getElementById('seed').value;
 
         if (!imgUrl) {
             status.innerText = "❌ Будь ласка, встав посилання на фото";
             return;
         }
 
-        // UI підготовка
         status.innerText = "🚀 Запуск генерації...";
         resultDiv.innerHTML = ""; 
         btn.disabled = true;
@@ -140,13 +193,23 @@
         progressBar.style.width = '5%';
 
         let attempts = 0;
-        const MAX_ATTEMPTS = 60; // 5 хв
+        const MAX_ATTEMPTS = 60;
         
         try {
+            // Відправляємо розширений пакет даних
+            const payload = {
+                image_url: imgUrl,
+                prompt: prompt,
+                negative_prompt: negPrompt,
+                guidance_scale: guidance,
+                num_inference_steps: steps
+            };
+            if (seed) payload.seed = seed; // Додаємо seed тільки якщо він не пустий
+
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image_url: imgUrl, prompt: prompt })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) throw new Error("Помилка сервера при запуску");
@@ -158,14 +221,12 @@
 
             const pollInterval = setInterval(async () => {
                 attempts++;
-                
-                // Анімація прогресу (доходить до 90% і чекає)
                 const percent = Math.min((attempts / MAX_ATTEMPTS) * 100 * 2, 90);
                 progressBar.style.width = `${percent}%`;
 
                 if (attempts > MAX_ATTEMPTS) {
                     clearInterval(pollInterval);
-                    status.innerText = "⏰ Час вичерпано. Спробуйте пізніше.";
+                    status.innerText = "⏰ Час вичерпано.";
                     btn.disabled = false;
                     progressContainer.style.display = 'none';
                     return;
@@ -182,33 +243,25 @@
                             clearInterval(pollInterval);
                             progressBar.style.width = '100%';
                             status.innerText = "✨ Готово!";
-                            
                             setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
 
-                            // Вивід красивих кнопок та відео
                             resultDiv.innerHTML = `
                                 <video controls autoplay loop>
                                     <source src="${finalVideoUrl}" type="video/mp4">
                                 </video>
                                 <div class="action-buttons">
-                                    <button class="action-btn" onclick="copyLink('${finalVideoUrl}')">
-                                        📋 Копіювати лінк
-                                    </button>
-                                    <a href="${finalVideoUrl}" target="_blank" class="action-btn" style="text-decoration: none;">
-                                        ⬇️ Відкрити файл
-                                    </a>
+                                    <button class="action-btn" onclick="copyLink('${finalVideoUrl}')">📋 Копіювати лінк</button>
+                                    <a href="${finalVideoUrl}" target="_blank" class="action-btn">⬇️ Відкрити файл</a>
                                 </div>
                             `;
                             btn.disabled = false;
-                            
-                            // Зберігаємо в галерею
                             saveToGallery(finalVideoUrl, prompt);
                         }
                     } else if (checkRes.status === 202) {
                         status.innerText = `⏳ Малюємо кадри...`;
                     }
                 } catch (pollError) {
-                    console.error("Мережева помилка:", pollError);
+                    console.error("Помилка:", pollError);
                 }
             }, 5000);
 

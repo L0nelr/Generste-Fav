@@ -4,7 +4,6 @@ const app = express();
 
 app.use(express.json());
 
-// Логування для відстеження процесу
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] 📡 Запит: ${req.method} ${req.url}`);
     next();
@@ -12,19 +11,32 @@ app.use((req, res, next) => {
 
 const FAL_KEY = process.env.FAL_KEY;
 
-// 1. ЗАПУСК ГЕНЕРАЦІЇ (Тільки черга)
 app.post('/start', async (req, res) => {
     console.log("📥 Спроба запуску генерації...");
     try {
-        const { image_url, prompt } = req.body;
+        // Отримуємо ВСІ параметри з сайту
+        const { image_url, prompt, negative_prompt, guidance_scale, num_inference_steps, seed } = req.body;
         
         if (!image_url) {
             return res.status(400).json({ error: "Вставте посилання на фото" });
         }
 
-        // Пряма відправка в чергу без вебхуків
+        // Формуємо базовий пакет даних
+        const inputPayload = {
+            image_url,
+            prompt: prompt || "natural motion"
+        };
+
+        // Додаємо розширені налаштування, якщо користувач їх ввів
+        if (negative_prompt) inputPayload.negative_prompt = negative_prompt;
+        if (guidance_scale) inputPayload.guidance_scale = Number(guidance_scale);
+        if (num_inference_steps) inputPayload.num_inference_steps = Number(num_inference_steps);
+        if (seed) inputPayload.seed = Number(seed);
+
+        console.log("📦 Відправляю параметри у Fal.ai:", inputPayload);
+
         const { request_id } = await fal.queue.submit("fal-ai/ltx-video", {
-            input: { image_url, prompt: prompt || "natural motion" }
+            input: inputPayload
         });
         
         console.log(`✅ Запит у черзі Fal. ID: ${request_id}`);
@@ -35,25 +47,20 @@ app.post('/start', async (req, res) => {
     }
 });
 
-// 2. ПЕРЕВІРКА СТАТУСУ (Прямий запит до Fal API)
 app.get('/status/:id', async (req, res) => {
     try {
         const requestId = req.params.id;
-        
-        // Дізнаємося актуальний статус у нейромережі
         const statusUpdate = await fal.queue.status("fal-ai/ltx-video", { requestId });
 
         if (statusUpdate.status === "COMPLETED") {
-            // Якщо готово — забираємо відео
             const result = await fal.queue.result("fal-ai/ltx-video", { requestId });
             console.log(`🎉 Відео успішно згенеровано для ID: ${requestId}`);
             return res.json(result);
         }
         
-        // Якщо ще генерується — повертаємо поточний статус
         res.status(202).json({ status: statusUpdate.status });
     } catch (error) {
-        console.error(`❌ Помилка перевірки статусу для ${req.params.id}:`, error.message);
+        console.error(`❌ Помилка перевірки статусу:`, error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -62,5 +69,5 @@ app.use(express.static('public'));
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Надійний сервер (Stateless) запущено на порту ${PORT}`);
+    console.log(`🚀 Pro-сервер запущено на порту ${PORT}`);
 });
