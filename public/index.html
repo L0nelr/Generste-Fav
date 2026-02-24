@@ -13,19 +13,22 @@
         input[type="text"], input[type="number"] { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; transition: all 0.2s; }
         input:focus { border-color: #0052cc; box-shadow: 0 0 0 3px rgba(0,82,204,0.1); outline: none; }
         
+        /* Стилі для Drag & Drop зони */
+        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #f8faff; color: #0052cc; font-weight: 500; box-sizing: border-box; margin-bottom: 1rem; position: relative; overflow: hidden; }
+        .drop-zone:hover, .drop-zone.dragover { background: #e6f0ff; border-color: #003d99; }
+        .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; object-fit: contain; }
+        .drop-text { pointer-events: none; }
+        .divider { text-align: center; margin: 5px 0 15px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
         button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; margin-top: 10px; }
         button.primary-btn:hover { box-shadow: 0 6px 16px rgba(0,82,204,0.3); }
         button.primary-btn:active { transform: scale(0.98); }
         button.primary-btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* Стилі для розширених налаштувань */
         .toggle-settings-btn { width: 100%; background: none; border: none; color: #666; font-size: 14px; font-weight: 600; cursor: pointer; padding: 10px; text-align: left; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; border-radius: 8px; transition: background 0.2s; }
         .toggle-settings-btn:hover { background: #f4f5f7; color: #333; }
-        
         .advanced-settings { display: none; background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease-out; }
         .advanced-settings.active { display: block; }
-        
-        /* Повзунки */
         .slider-container { margin-bottom: 1.5rem; }
         .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
         .slider-val { font-weight: bold; color: #0052cc; }
@@ -33,7 +36,6 @@
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Прогрес-бар */
         .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
         #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; min-height: 20px; font-weight: 500; }
@@ -59,8 +61,16 @@
 <div class="container">
     <h1>Генератор відео</h1>
 
-    <label for="imgUrl">Посилання на фото (Direct Link)</label>
-    <input type="text" id="imgUrl" placeholder="https://example.com/image.jpg">
+    <label>Зображення (Перетягніть або натисніть)</label>
+    
+    <div class="drop-zone" id="dropZone">
+        <span class="drop-text" id="dropText">📂 Перетягніть фото сюди або натисніть</span>
+        <img id="imagePreview" src="" alt="Preview">
+        <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" style="display: none;">
+    </div>
+
+    <div class="divider">— або —</div>
+    <input type="text" id="imgUrl" placeholder="Вставте пряме посилання (https://...)">
 
     <label for="prompt">Що має відбуватися? (Промпт)</label>
     <input type="text" id="prompt" placeholder="Наприклад: water flowing, camera zoom in">
@@ -106,31 +116,83 @@
 </div>
 
 <script>
+    // --- ЛОГІКА DRAG & DROP ТА ФАЙЛІВ ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const dropText = document.getElementById('dropText');
+    const imgUrlInput = document.getElementById('imgUrl');
+    
+    let base64Image = null; // Тут зберігатимемо завантажене фото
+
+    // Клік по зоні відкриває вікно вибору файлу
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // Обробка перетягування
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // Обробка вибору файлу через вікно
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    // Якщо користувач почав вводити URL, скидаємо завантажений файл
+    imgUrlInput.addEventListener('input', () => {
+        if (imgUrlInput.value.trim() !== "") {
+            base64Image = null;
+            imagePreview.style.display = 'none';
+            dropText.style.display = 'block';
+            fileInput.value = "";
+        }
+    });
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('❌ Будь ласка, завантажте лише зображення (JPG, PNG, WEBP)!');
+            return;
+        }
+        
+        // Читаємо файл і перетворюємо у Base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            base64Image = e.target.result; // Зберігаємо код зображення
+            imagePreview.src = base64Image; // Показуємо прев'ю
+            imagePreview.style.display = 'block';
+            dropText.style.display = 'none';
+            imgUrlInput.value = ""; // Очищаємо поле з посиланням
+        };
+        reader.readAsDataURL(file);
+    }
+
     // --- UI ЛОГІКА (Акордеон та Повзунки) ---
     const toggleBtn = document.getElementById('toggleSettingsBtn');
     const settingsPanel = document.getElementById('advancedSettingsPanel');
-    
     toggleBtn.onclick = () => {
         settingsPanel.classList.toggle('active');
-        toggleBtn.innerHTML = settingsPanel.classList.contains('active') 
-            ? '<span>⚙️</span> Приховати налаштування' 
-            : '<span>⚙️</span> Розширені налаштування';
+        toggleBtn.innerHTML = settingsPanel.classList.contains('active') ? '<span>⚙️</span> Приховати налаштування' : '<span>⚙️</span> Розширені налаштування';
     };
 
-    const guidanceSlider = document.getElementById('guidance');
-    const guidanceVal = document.getElementById('guidanceVal');
-    guidanceSlider.oninput = function() { guidanceVal.innerHTML = this.value; }
-
-    const stepsSlider = document.getElementById('steps');
-    const stepsVal = document.getElementById('stepsVal');
-    stepsSlider.oninput = function() { stepsVal.innerHTML = this.value; }
+    document.getElementById('guidance').oninput = function() { document.getElementById('guidanceVal').innerHTML = this.value; }
+    document.getElementById('steps').oninput = function() { document.getElementById('stepsVal').innerHTML = this.value; }
 
     // --- ГАЛЕРЕЯ ---
     function loadGallery() {
         const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
         const gallerySection = document.getElementById('gallerySection');
         const galleryGrid = document.getElementById('galleryGrid');
-        
         if (savedVideos.length > 0) {
             gallerySection.style.display = 'block';
             galleryGrid.innerHTML = savedVideos.map((video, index) => `
@@ -144,26 +206,20 @@
             gallerySection.style.display = 'none';
         }
     }
-
     function saveToGallery(url, prompt) {
         const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
         savedVideos.push({ url, prompt });
         localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
         loadGallery();
     }
-
     window.deleteVideo = function(index) {
         const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
-        const realIndex = savedVideos.length - 1 - index;
-        savedVideos.splice(realIndex, 1);
+        savedVideos.splice(savedVideos.length - 1 - index, 1);
         localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
         loadGallery();
     }
     loadGallery();
-
-    window.copyLink = function(url) {
-        navigator.clipboard.writeText(url).then(() => alert('✅ Посилання скопійовано!'));
-    }
+    window.copyLink = function(url) { navigator.clipboard.writeText(url).then(() => alert('✅ Посилання скопійовано!')); }
 
     // --- ЛОГІКА ГЕНЕРАЦІЇ ---
     document.getElementById('btn').onclick = async () => {
@@ -173,38 +229,38 @@
         const progressContainer = document.getElementById('progressContainer');
         const btn = document.getElementById('btn');
 
-        // Збираємо ВСІ дані з форми
-        const imgUrl = document.getElementById('imgUrl').value;
+        // Визначаємо, що відправити: завантажений файл АБО посилання
+        const finalImageSource = base64Image || imgUrlInput.value;
+
+        if (!finalImageSource) {
+            status.innerText = "❌ Будь ласка, завантажте фото або вставте посилання";
+            return;
+        }
+
         const prompt = document.getElementById('prompt').value;
         const negPrompt = document.getElementById('negPrompt').value;
         const guidance = document.getElementById('guidance').value;
         const steps = document.getElementById('steps').value;
         const seed = document.getElementById('seed').value;
 
-        if (!imgUrl) {
-            status.innerText = "❌ Будь ласка, встав посилання на фото";
-            return;
-        }
-
-        status.innerText = "🚀 Запуск генерації...";
+        status.innerText = "🚀 Відправка фото на сервер...";
         resultDiv.innerHTML = ""; 
         btn.disabled = true;
         progressContainer.style.display = 'block';
-        progressBar.style.width = '5%';
+        progressBar.style.width = '15%';
 
         let attempts = 0;
         const MAX_ATTEMPTS = 60;
         
         try {
-            // Відправляємо розширений пакет даних
             const payload = {
-                image_url: imgUrl,
+                image_url: finalImageSource, // Тут тепер може бути і Base64, і URL
                 prompt: prompt,
                 negative_prompt: negPrompt,
                 guidance_scale: guidance,
                 num_inference_steps: steps
             };
-            if (seed) payload.seed = seed; // Додаємо seed тільки якщо він не пустий
+            if (seed) payload.seed = seed;
 
             const response = await fetch('/start', {
                 method: 'POST',
@@ -221,8 +277,7 @@
 
             const pollInterval = setInterval(async () => {
                 attempts++;
-                const percent = Math.min((attempts / MAX_ATTEMPTS) * 100 * 2, 90);
-                progressBar.style.width = `${percent}%`;
+                progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100 * 2, 90)}%`;
 
                 if (attempts > MAX_ATTEMPTS) {
                     clearInterval(pollInterval);
@@ -234,7 +289,6 @@
                 
                 try {
                     const checkRes = await fetch(`/status/${request_id}`);
-                    
                     if (checkRes.status === 200) {
                         const result = await checkRes.json();
                         const finalVideoUrl = result.data?.video?.url || result.video?.url || result.video_url || result.url;
