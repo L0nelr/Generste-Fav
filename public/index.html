@@ -1,35 +1,35 @@
 document.getElementById('btn').onclick = async () => {
     const status = document.getElementById('status');
     const resultDiv = document.getElementById('result');
-    
-    status.innerText = "🎬 Запит надіслано в чергу...";
+    const imgUrl = document.getElementById('imgUrl').value;
+
+    if (!imgUrl) return alert("Встав посилання!");
+
+    status.innerText = "🎬 Запит надіслано...";
     
     try {
-        // Крок 1: Отримуємо ID запиту
         const startRes = await fetch('/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                image_url: document.getElementById('imgUrl').value,
-                prompt: document.getElementById('prompt').value
-            })
+            body: JSON.stringify({ image_url: imgUrl, prompt: document.getElementById('prompt').value })
         });
+        
         const { request_id } = await startRes.json();
         
-        // Крок 2: Опитуємо статус
-        const checkStatus = setInterval(async () => {
-            status.innerText = `⏳ Обробка в черзі (ID: ${request_id})...`;
+        // Опитуємо Твій сервер кожні 3 секунди (це безкоштовно і швидко)
+        const poll = setInterval(async () => {
+            status.innerText = "⏳ Очікуємо сигнал від нейромережі...";
+            const res = await fetch(`/check/${request_id}`);
             
-            const res = await fetch(`/status/${request_id}`);
             if (res.status === 200) {
                 const data = await res.json();
-                clearInterval(checkStatus);
-                status.innerText = "✅ Готово!";
+                clearInterval(poll);
+                status.innerText = "✅ Відео готове!";
                 resultDiv.innerHTML = `<video controls src="${data.video.url}"></video>`;
             }
-        }, 5000); // Кожні 5 секунд
+        }, 3000);
 
     } catch (e) {
-        status.innerText = "Помилка: " + e.message;
+        status.innerText = "Помилка зв'язку з сервером.";
     }
 };
