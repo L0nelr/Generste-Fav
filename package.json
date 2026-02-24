@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
- "scripts": {
-  "start": "node server.js"
-},
+  "scripts": {
+    "start": "node server.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/L0nelr/Generste-Fav.git"
@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/L0nelr/Generste-Fav#readme",
   "dependencies": {
-    "@fal-ai/serverless-client": "^0.15.0",
+    "@fal-ai/client": "^1.9.3",
     "express": "^5.2.1"
   }
 }
