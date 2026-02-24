@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Video Generator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; line-height: 1.6; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; }
+        button { background: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
+        button:disabled { background: #ccc; }
+        #status { color: #666; font-style: italic; }
+        video { width: 100%; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <h2>Генератор відео з фото</h2>
+    <input type="text" id="imgUrl" placeholder="Посилання на фото (пряме)">
+    <input type="text" id="prompt" placeholder="Опишіть рух (наприклад: smiling, waving)">
+    <button id="btn">Згенерувати відео</button>
+    <p id="status"></p>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('btn').onclick = async () => {
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            
+            btn.disabled = true;
+            status.innerText = "Генерація запущена... Це може зайняти 1-2 хвилини.";
+            resultDiv.innerHTML = "";
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_url: document.getElementById('imgUrl').value,
+                        prompt: document.getElementById('prompt').value
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.video) {
+                    status.innerText = "Готово!";
+                    resultDiv.innerHTML = `<video controls src="${data.video.url}"></video><br>
+                                         <a href="${data.video.url}" target="_blank">Відкрити посилання</a>`;
+                } else {
+                    throw new Error(data.error || "Помилка");
+                }
+            } catch (e) {
+                status.innerText = "Помилка: " + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
