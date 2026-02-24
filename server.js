@@ -5,34 +5,37 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// ПЕРЕВІРКА КЛЮЧА
-const API_KEY = process.env.FAL_KEY || "ТВІЙ_КЛЮЧ_ЯКЩО_НЕ_ДОДАВ_У_VARIABLES";
-process.env.FAL_KEY = API_KEY;
+process.env.FAL_KEY = process.env.FAL_KEY || "ТВІЙ_КЛЮЧ";
 
-console.log("Ключ FAL_KEY знайдено:", API_KEY ? "ТАК (починається на " + API_KEY.substring(0, 5) + ")" : "НІ");
-
-app.post('/generate', async (req, res) => {
-    const { image_url, prompt } = req.body;
-    
-    console.log(`🚀 Запит отримано! Фото: ${image_url}`);
-
+// 1. Початок генерації
+app.post('/start', async (req, res) => {
     try {
-        // Використовуємо subscribe, але додаємо обробку тайм-ауту
-        const result = await fal.subscribe("fal-ai/ltx-video", {
-            input: {
-                image_url: image_url,
-                prompt: prompt || "realistic motion"
-            },
-            logs: true // Це дозволить бачити прогрес генерації в логах Railway
+        const { image_url, prompt } = req.body;
+        console.log(`🚀 Подано в чергу: ${image_url}`);
+        
+        // Відправляємо запит у чергу БЕЗ очікування завершення
+        const { request_id } = await fal.queue.submit("fal-ai/ltx-video", {
+            input: { image_url, prompt: prompt || "realistic motion" }
         });
-
-        console.log("✅ Генерація завершена успішно!");
-        res.json(result);
+        
+        res.json({ request_id });
     } catch (error) {
-        console.error("❌ ПОМИЛКА API:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
+// 2. Перевірка статусу
+app.get('/status/:id', async (req, res) => {
+    try {
+        const result = await fal.queue.result("fal-ai/ltx-video", {
+            requestId: req.params.id,
+        });
+        res.json(result);
+    } catch (error) {
+        // Якщо ще не готово, API може видати помилку або пустий статус
+        res.status(202).json({ status: "processing" });
+    }
+});
+
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`✅ Сервер запущено на порту ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Сервер черги запущено на порту ${PORT}`));
