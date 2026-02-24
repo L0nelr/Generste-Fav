@@ -58,7 +58,7 @@
         btn.disabled = true;
 
         let attempts = 0;
-        const MAX_ATTEMPTS = 60; // 5 хвилин максимум (60 спроб * 5 сек)
+        const MAX_ATTEMPTS = 60; // 5 хвилин максимум
         
         try {
             // 1. ЗАПУСК
@@ -94,22 +94,33 @@
                     
                     if (checkRes.status === 200) {
                         const result = await checkRes.json();
-                        if (result.video) {
+                        
+                        // ДІАГНОСТИКА: виводимо об'єкт у консоль браузера
+                        console.log("📦 Отримано результат:", result);
+                        
+                        // РОЗУМНИЙ ПОШУК посилання на відео (під різні формати Fal.ai)
+                        const finalVideoUrl = result.video?.url || result.video_url || result.url;
+
+                        if (finalVideoUrl) {
                             clearInterval(pollInterval);
                             status.innerText = "✨ Готово!";
                             resultDiv.innerHTML = `
-                                <video controls autoplay loop>
-                                    <source src="${result.video.url}" type="video/mp4">
+                                <video controls autoplay loop style="width:100%; border-radius:12px;">
+                                    <source src="${finalVideoUrl}" type="video/mp4">
                                 </video>
-                                <a href="${result.video.url}" target="_blank" class="download-link">🔗 Відкрити відео</a>
+                                <a href="${finalVideoUrl}" target="_blank" class="download-link">🔗 Відкрити відео</a>
                             `;
+                            btn.disabled = false;
+                        } else {
+                            clearInterval(pollInterval);
+                            console.error("❌ Не знайдено URL відео у відповіді:", result);
+                            status.innerText = "⚠️ Відео готове, але формат даних змінився. Дивись F12.";
                             btn.disabled = false;
                         }
                     } else if (checkRes.status === 202) {
                         const partialData = await checkRes.json();
                         status.innerText = `⏳ Обробка... (${partialData.status} | спроба ${attempts}/${MAX_ATTEMPTS})`;
                     } else {
-                        // Якщо сервер повернув 500
                         const errData = await checkRes.json();
                         console.error("Помилка від сервера:", errData);
                     }
