@@ -2,7 +2,7 @@ const express = require('express');
 const { fal } = require("@fal-ai/client");
 const app = express();
 
-a// Збільшуємо ліміт до 50 Мегабайт, щоб сервер міг приймати "важкі" фотографії
+// Збільшуємо ліміт до 50 Мегабайт, щоб сервер міг приймати "важкі" фотографії
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
