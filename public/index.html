@@ -3,24 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Video Generator</title>
+    <title>AI Video Generator Pro</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 450px; }
-        h1 { font-size: 24px; color: #1a1a1a; margin-bottom: 1.5rem; text-align: center; }
+        /* Сучасні Figma-стилі */
+        body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; box-sizing: border-box; }
+        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 500px; margin-bottom: 2rem; }
+        h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; font-weight: 700; }
         
-        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #4a4a4a; font-size: 14px; }
-        input { width: 100%; padding: 12px; margin-bottom: 1.2rem; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; transition: border 0.3s; }
-        input:focus { border-color: #007bff; outline: none; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a4a4a; font-size: 14px; }
+        input { width: 100%; padding: 14px; margin-bottom: 1.5rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; transition: all 0.2s; }
+        input:focus { border-color: #0052cc; box-shadow: 0 0 0 3px rgba(0,82,204,0.1); outline: none; }
         
-        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; }
+        button.primary-btn:hover { box-shadow: 0 6px 16px rgba(0,82,204,0.3); }
+        button.primary-btn:active { transform: scale(0.98); }
+        button.primary-btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
 
+        /* Прогрес-бар */
+        .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
+        
         #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; min-height: 20px; font-weight: 500; }
+        
+        /* Кнопки дій */
+        .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .action-btn { flex: 1; padding: 12px; border: 1.5px solid #e1e4e8; background: white; border-radius: 10px; font-weight: 600; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .action-btn:hover { background: #f8f9fa; border-color: #d1d5db; }
+        
         #result { margin-top: 1.5rem; text-align: center; }
-        video { width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .download-link { display: inline-block; margin-top: 10px; color: #007bff; text-decoration: none; font-weight: bold; }
+        video { width: 100%; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #000; }
+        
+        /* Галерея проектів */
+        .gallery { width: 100%; max-width: 800px; }
+        .gallery h2 { font-size: 20px; color: #1a1a1a; margin-bottom: 1rem; padding-left: 5px; border-left: 4px solid #0052cc; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .gallery-card { background: white; padding: 12px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .gallery-card video { border-radius: 10px; margin-bottom: 10px; }
+        .gallery-card .prompt-text { font-size: 13px; color: #666; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .delete-btn { width: 100%; padding: 8px; background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
+        .delete-btn:hover { background: #ffccc7; }
     </style>
 </head>
 <body>
@@ -34,16 +55,74 @@
     <label for="prompt">Що має відбуватися? (Промпт)</label>
     <input type="text" id="prompt" placeholder="Наприклад: water flowing, camera zoom in">
 
-    <button id="btn">Згенерувати відео</button>
+    <button id="btn" class="primary-btn">✨ Згенерувати відео</button>
 
+    <div id="progressContainer" class="progress-container">
+        <div id="progressBar" class="progress-bar"></div>
+    </div>
     <p id="status"></p>
+    
     <div id="result"></div>
 </div>
 
+<div class="gallery" id="gallerySection" style="display: none;">
+    <h2>📂 Мої проекти</h2>
+    <div id="galleryGrid" class="gallery-grid"></div>
+</div>
+
 <script>
+    // --- ГАЛЕРЕЯ (Local Storage) ---
+    function loadGallery() {
+        const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
+        const gallerySection = document.getElementById('gallerySection');
+        const galleryGrid = document.getElementById('galleryGrid');
+        
+        if (savedVideos.length > 0) {
+            gallerySection.style.display = 'block';
+            galleryGrid.innerHTML = savedVideos.map((video, index) => `
+                <div class="gallery-card">
+                    <video controls src="${video.url}"></video>
+                    <div class="prompt-text">💭 ${video.prompt || 'Без промпту'}</div>
+                    <button class="delete-btn" onclick="deleteVideo(${index})">🗑️ Видалити</button>
+                </div>
+            `).reverse().join(''); // Показуємо нові першими
+        } else {
+            gallerySection.style.display = 'none';
+        }
+    }
+
+    function saveToGallery(url, prompt) {
+        const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
+        savedVideos.push({ url, prompt, date: new Date().toISOString() });
+        localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
+        loadGallery();
+    }
+
+    window.deleteVideo = function(index) {
+        const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
+        // Оскільки ми відображаємо у зворотному порядку (.reverse()), індекс треба скоригувати
+        const realIndex = savedVideos.length - 1 - index;
+        savedVideos.splice(realIndex, 1);
+        localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
+        loadGallery();
+    }
+
+    // Завантажуємо галерею при старті
+    loadGallery();
+
+    // --- ФУНКЦІЇ ДЛЯ КНОПОК ---
+    window.copyLink = function(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('✅ Посилання скопійовано!');
+        });
+    }
+
+    // --- ЛОГІКА ГЕНЕРАЦІЇ ---
     document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
         const imgUrl = document.getElementById('imgUrl').value;
         const prompt = document.getElementById('prompt').value;
         const btn = document.getElementById('btn');
@@ -53,12 +132,15 @@
             return;
         }
 
-        status.innerText = "🚀 Відправка запиту до сервера...";
+        // UI підготовка
+        status.innerText = "🚀 Запуск генерації...";
         resultDiv.innerHTML = ""; 
         btn.disabled = true;
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '5%';
 
         let attempts = 0;
-        const MAX_ATTEMPTS = 60; // 5 хвилин максимум
+        const MAX_ATTEMPTS = 60; // 5 хв
         
         try {
             const response = await fetch('/start', {
@@ -67,23 +149,25 @@
                 body: JSON.stringify({ image_url: imgUrl, prompt: prompt })
             });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Помилка сервера при запуску");
-            }
+            if (!response.ok) throw new Error("Помилка сервера при запуску");
 
             const data = await response.json();
             const request_id = data.request_id;
             
-            status.innerText = "⏳ Відео в черзі. Очікуємо...";
+            status.innerText = "⏳ Обробка нейромережею...";
 
             const pollInterval = setInterval(async () => {
                 attempts++;
                 
+                // Анімація прогресу (доходить до 90% і чекає)
+                const percent = Math.min((attempts / MAX_ATTEMPTS) * 100 * 2, 90);
+                progressBar.style.width = `${percent}%`;
+
                 if (attempts > MAX_ATTEMPTS) {
                     clearInterval(pollInterval);
-                    status.innerText = "⏰ Час очікування вичерпано. Спробуйте пізніше.";
+                    status.innerText = "⏰ Час вичерпано. Спробуйте пізніше.";
                     btn.disabled = false;
+                    progressContainer.style.display = 'none';
                     return;
                 }
                 
@@ -92,44 +176,46 @@
                     
                     if (checkRes.status === 200) {
                         const result = await checkRes.json();
-                        
-                        console.log("📦 Отримано результат:", result);
-                        
-                        // 🛠 ОСЬ ВИПРАВЛЕНИЙ РЯДОК: Додано result.data?.video?.url
                         const finalVideoUrl = result.data?.video?.url || result.video?.url || result.video_url || result.url;
 
                         if (finalVideoUrl) {
                             clearInterval(pollInterval);
+                            progressBar.style.width = '100%';
                             status.innerText = "✨ Готово!";
+                            
+                            setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
+
+                            // Вивід красивих кнопок та відео
                             resultDiv.innerHTML = `
-                                <video controls autoplay loop style="width:100%; border-radius:12px;">
+                                <video controls autoplay loop>
                                     <source src="${finalVideoUrl}" type="video/mp4">
                                 </video>
-                                <a href="${finalVideoUrl}" target="_blank" class="download-link">🔗 Відкрити відео</a>
+                                <div class="action-buttons">
+                                    <button class="action-btn" onclick="copyLink('${finalVideoUrl}')">
+                                        📋 Копіювати лінк
+                                    </button>
+                                    <a href="${finalVideoUrl}" target="_blank" class="action-btn" style="text-decoration: none;">
+                                        ⬇️ Відкрити файл
+                                    </a>
+                                </div>
                             `;
                             btn.disabled = false;
-                        } else {
-                            clearInterval(pollInterval);
-                            console.error("❌ Не знайдено URL відео у відповіді:", result);
-                            status.innerText = "⚠️ Відео готове, але формат даних змінився. Дивись F12.";
-                            btn.disabled = false;
+                            
+                            // Зберігаємо в галерею
+                            saveToGallery(finalVideoUrl, prompt);
                         }
                     } else if (checkRes.status === 202) {
-                        const partialData = await checkRes.json();
-                        status.innerText = `⏳ Обробка... (${partialData.status} | спроба ${attempts}/${MAX_ATTEMPTS})`;
-                    } else {
-                        const errData = await checkRes.json();
-                        console.error("Помилка від сервера:", errData);
+                        status.innerText = `⏳ Малюємо кадри...`;
                     }
                 } catch (pollError) {
-                    console.error("Мережева помилка опитування:", pollError);
+                    console.error("Мережева помилка:", pollError);
                 }
             }, 5000);
 
         } catch (e) {
-            console.error("Помилка:", e);
-            status.innerText = "❌ " + e.message;
+            status.innerText = "❌ Помилка: " + e.message;
             btn.disabled = false;
+            progressContainer.style.display = 'none';
         }
     };
 </script>
