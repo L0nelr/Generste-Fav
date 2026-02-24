@@ -1,73 +1,109 @@
-document.getElementById('btn').onclick = async () => {
-    const status = document.getElementById('status');
-    const resultDiv = document.getElementById('result');
-    const imgUrl = document.getElementById('imgUrl').value;
-    const prompt = document.getElementById('prompt').value;
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Generator</title>
+    <style>
+        /* Базові стилі в дусі Figma */
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 450px; }
+        h1 { font-size: 24px; color: #1a1a1a; margin-bottom: 1.5rem; text-align: center; }
+        
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #4a4a4a; font-size: 14px; }
+        input { width: 100%; padding: 12px; margin-bottom: 1.2rem; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; transition: border 0.3s; }
+        input:focus { border-color: #007bff; outline: none; }
+        
+        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
 
-    if (!imgUrl) {
-        status.innerText = "❌ Будь ласка, встав посилання на фото";
-        return;
-    }
+        #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; min-height: 20px; }
+        #result { margin-top: 1.5rem; text-align: center; }
+        video { width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .download-link { display: inline-block; margin-top: 10px; color: #007bff; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-    status.innerText = "🚀 Відправка запиту до сервера...";
-    resultDiv.innerHTML = ""; // Очищуємо попередній результат
+<div class="container">
+    <h1>Генератор відео</h1>
 
-    try {
-        // 1. ЗАПУСК ГЕНЕРАЦІЇ
-        const response = await fetch('/start', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_url: imgUrl, prompt: prompt })
-        });
+    <label for="imgUrl">Посилання на фото (Direct Link)</label>
+    <input type="text" id="imgUrl" placeholder="https://example.com/image.jpg">
 
-        // Діагностика відповіді сервера
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Сервер повернув HTML замість JSON. Можливо, шлях /start не знайдено:", errorText);
-            status.innerText = "Помилка сервера. Перевір консоль (F12).";
+    <label for="prompt">Що має відбуватися? (Промпт)</label>
+    <input type="text" id="prompt" placeholder="Наприклад: water flowing, camera zoom in">
+
+    <button id="btn">Згенерувати відео</button>
+
+    <p id="status"></p>
+    <div id="result"></div>
+</div>
+
+<script>
+    // Твій JavaScript код тут
+    document.getElementById('btn').onclick = async () => {
+        const status = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const imgUrl = document.getElementById('imgUrl').value;
+        const prompt = document.getElementById('prompt').value;
+
+        if (!imgUrl) {
+            status.innerText = "❌ Будь ласка, встав посилання на фото";
             return;
         }
 
-        const data = await response.json();
-        const request_id = data.request_id;
-        console.log("✅ Отримано ID запиту:", request_id);
+        status.innerText = "🚀 Відправка запиту до сервера...";
+        resultDiv.innerHTML = ""; 
 
-        // 2. ЦИКЛ ПЕРЕВІРКИ СТАТУСУ (POLLING)
-        status.innerText = "⏳ Відео в черзі. Очікуємо відповідь від нейромережі...";
-        
-        const pollInterval = setInterval(async () => {
-            try {
-                const checkRes = await fetch(`/check/${request_id}`);
-                
-                if (checkRes.status === 200) {
-                    // Відео готове!
-                    const result = await checkRes.json();
-                    clearInterval(pollInterval); // Зупиняємо таймер
-                    
-                    status.innerText = "✨ Готово!";
-                    resultDiv.innerHTML = `
-                        <video controls autoplay loop style="width:100%; border-radius:12px;">
-                            <source src="${result.video.url}" type="video/mp4">
-                        </video>
-                        <br>
-                        <a href="${result.video.url}" target="_blank" style="color: #007bff; text-decoration: none; font-weight: bold;">
-                            🔗 Відкрити пряме посилання на відео
-                        </a>
-                    `;
-                } else if (checkRes.status === 202) {
-                    // Ще в процесі
-                    status.innerText = "⏳ Нейромережа працює над відео... (це зазвичай 1-2 хв)";
-                } else {
-                    // Якась інша помилка при перевірці
-                    console.error("Помилка при перевірці статусу:", await checkRes.text());
-                }
-            } catch (pollError) {
-                console.error("Помилка зв'язку під час опитування:", pollError);
+        try {
+            const response = await fetch('/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image_url: imgUrl, prompt: prompt })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Помилка:", errorText);
+                status.innerText = "Помилка сервера. Перевір консоль (F12).";
+                return;
             }
-        }, 5000); // Перевіряємо кожні 5 секунд
 
-    } catch (e) {
-        console.error("Критична помилка fetch:", e);
-        status.innerText = "❌ Помилка зв'язку з сервером. Перевір, чи запущений Railway.";
-    }
-};
+            const data = await response.json();
+            const request_id = data.request_id;
+            console.log("✅ ID запиту:", request_id);
+
+            status.innerText = "⏳ Відео в черзі. Очікуємо...";
+
+            const pollInterval = setInterval(async () => {
+                try {
+                    const checkRes = await fetch(`/check/${request_id}`);
+                    if (checkRes.status === 200) {
+                        const result = await checkRes.json();
+                        clearInterval(pollInterval);
+                        status.innerText = "✨ Готово!";
+                        resultDiv.innerHTML = `
+                            <video controls autoplay loop>
+                                <source src="${result.video.url}" type="video/mp4">
+                            </video>
+                            <a href="${result.video.url}" target="_blank" class="download-link">🔗 Завантажити відео</a>
+                        `;
+                    } else if (checkRes.status === 202) {
+                        status.innerText = "⏳ Нейромережа працює... (1-2 хв)";
+                    }
+                } catch (pollError) {
+                    console.error("Помилка опитування:", pollError);
+                }
+            }, 5000);
+
+        } catch (e) {
+            console.error("Помилка fetch:", e);
+            status.innerText = "❌ Помилка зв'язку з сервером.";
+        }
+    };
+</script>
+
+</body>
+</html>
