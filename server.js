@@ -5,47 +5,51 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// Тимчасове сховище результатів (у пам'яті сервера)
-const resultsStore = {};
+// Логгер для діагностики - ми побачимо кожен клік у логах Railway
+app.use((req, res, next) => {
+    console.log(`📡 Запит: ${req.method} ${req.url}`);
+    next();
+});
 
+const resultsStore = {};
 process.env.FAL_KEY = process.env.FAL_KEY || "ТВІЙ_КЛЮЧ";
 
 // 1. Ендпоінт для запуску
 app.post('/start', async (req, res) => {
     try {
         const { image_url, prompt } = req.body;
-        // Railway автоматично підхоплює твою адресу
-        const publicUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
-            ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
-            : `${req.protocol}://${req.get('host')}`;
-            
-        const webhookUrl = `${publicUrl}/webhook`;
+        
+        // Формуємо URL вебхука професійно
+        const domain = process.env.RAILWAY_PUBLIC_DOMAIN || req.get('host');
+        const protocol = domain.includes('localhost') ? 'http' : 'https';
+        const webhookUrl = `${protocol}://${domain}/webhook`;
 
-        console.log(`📡 Надсилаю запит із Webhook URL: ${webhookUrl}`);
+        console.log(`🚀 Подаю в чергу. Webhook полетів на: ${webhookUrl}`);
 
         const { request_id } = await fal.queue.submit("fal-ai/ltx-video", {
-            input: { image_url, prompt: prompt || "natural motion" },
+            input: { image_url, prompt: prompt || "realistic motion" },
             webhook_url: webhookUrl
         });
         
         res.json({ request_id });
     } catch (error) {
+        console.error("❌ Помилка старту:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// 2. Ендпоінт-приймач (сюди Fal.ai пришле результат)
+// 2. Приймач Webhook
 app.post('/webhook', (req, res) => {
     const { request_id, payload, status } = req.body;
-    console.log(`🔔 Отримано Webhook для запиту: ${request_id}`);
+    console.log(`🔔 Webhook отримано для ID: ${request_id} (Статус: ${status})`);
     
     if (status === "COMPLETED") {
-        resultsStore[request_id] = payload; // Зберігаємо результат
+        resultsStore[request_id] = payload;
     }
     res.status(200).send("OK");
 });
 
-// 3. Локальний чек (браузер питає Твій сервер, а не API Fal)
+// 3. Перевірка статусу
 app.get('/check/:id', (req, res) => {
     const result = resultsStore[req.params.id];
     if (result) {
@@ -56,4 +60,4 @@ app.get('/check/:id', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Сервер на Webhooks працює на порту ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Сервер запущено на порту ${PORT}`));
