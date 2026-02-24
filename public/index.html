@@ -61,7 +61,6 @@
         const MAX_ATTEMPTS = 60; // 5 хвилин максимум
         
         try {
-            // 1. ЗАПУСК
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -78,7 +77,6 @@
             
             status.innerText = "⏳ Відео в черзі. Очікуємо...";
 
-            // 2. ЦИКЛ ПЕРЕВІРКИ СТАТУСУ
             const pollInterval = setInterval(async () => {
                 attempts++;
                 
@@ -95,11 +93,10 @@
                     if (checkRes.status === 200) {
                         const result = await checkRes.json();
                         
-                        // ДІАГНОСТИКА: виводимо об'єкт у консоль браузера
                         console.log("📦 Отримано результат:", result);
                         
-                        // РОЗУМНИЙ ПОШУК посилання на відео (під різні формати Fal.ai)
-                        const finalVideoUrl = result.video?.url || result.video_url || result.url;
+                        // 🛠 ОСЬ ВИПРАВЛЕНИЙ РЯДОК: Додано result.data?.video?.url
+                        const finalVideoUrl = result.data?.video?.url || result.video?.url || result.video_url || result.url;
 
                         if (finalVideoUrl) {
                             clearInterval(pollInterval);
