@@ -5,36 +5,34 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// Перевірка ключа (пріоритет змінним Railway)
-if (!process.env.FAL_KEY) {
-    process.env.FAL_KEY = "ТВІЙ_API_КЛЮЧ";
-}
+// ПЕРЕВІРКА КЛЮЧА
+const API_KEY = process.env.FAL_KEY || "ТВІЙ_КЛЮЧ_ЯКЩО_НЕ_ДОДАВ_У_VARIABLES";
+process.env.FAL_KEY = API_KEY;
+
+console.log("Ключ FAL_KEY знайдено:", API_KEY ? "ТАК (починається на " + API_KEY.substring(0, 5) + ")" : "НІ");
 
 app.post('/generate', async (req, res) => {
     const { image_url, prompt } = req.body;
-
-    if (!image_url) {
-        return res.status(400).json({ error: "Будь ласка, вкажіть посилання на фото" });
-    }
+    
+    console.log(`🚀 Запит отримано! Фото: ${image_url}`);
 
     try {
-        console.log(`🎬 Тестова генерація LTX-Video для: ${image_url}`);
-        
-        // Повертаємо модель ltx-video
+        // Використовуємо subscribe, але додаємо обробку тайм-ауту
         const result = await fal.subscribe("fal-ai/ltx-video", {
             input: {
                 image_url: image_url,
-                prompt: prompt || "low motion, realistic"
-            }
+                prompt: prompt || "realistic motion"
+            },
+            logs: true // Це дозволить бачити прогрес генерації в логах Railway
         });
 
+        console.log("✅ Генерація завершена успішно!");
         res.json(result);
     } catch (error) {
-        console.error("Помилка API:", error);
+        console.error("❌ ПОМИЛКА API:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Використовуємо порт 8080, як того вимагає Railway
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`✅ Тестовий сервер на базі LTX запущено на порту ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Сервер запущено на порту ${PORT}`));
