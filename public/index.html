@@ -2,34 +2,72 @@ document.getElementById('btn').onclick = async () => {
     const status = document.getElementById('status');
     const resultDiv = document.getElementById('result');
     const imgUrl = document.getElementById('imgUrl').value;
+    const prompt = document.getElementById('prompt').value;
 
-    status.innerText = "🚀 Відправка...";
+    if (!imgUrl) {
+        status.innerText = "❌ Будь ласка, встав посилання на фото";
+        return;
+    }
+
+    status.innerText = "🚀 Відправка запиту до сервера...";
+    resultDiv.innerHTML = ""; // Очищуємо попередній результат
 
     try {
+        // 1. ЗАПУСК ГЕНЕРАЦІЇ
         const response = await fetch('/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                image_url: imgUrl, 
-                prompt: document.getElementById('prompt').value 
-            })
+            body: JSON.stringify({ image_url: imgUrl, prompt: prompt })
         });
 
-        // Цей блок покаже нам правду
+        // Діагностика відповіді сервера
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Сервер відповів помилкою:", errorText);
-            status.innerText = "Помилка сервера. Дивись консоль (F12).";
+            console.error("Сервер повернув HTML замість JSON. Можливо, шлях /start не знайдено:", errorText);
+            status.innerText = "Помилка сервера. Перевір консоль (F12).";
             return;
         }
 
         const data = await response.json();
         const request_id = data.request_id;
+        console.log("✅ Отримано ID запиту:", request_id);
+
+        // 2. ЦИКЛ ПЕРЕВІРКИ СТАТУСУ (POLLING)
+        status.innerText = "⏳ Відео в черзі. Очікуємо відповідь від нейромережі...";
         
-        // Далі твій цикл перевірки...
-        // ...
+        const pollInterval = setInterval(async () => {
+            try {
+                const checkRes = await fetch(`/check/${request_id}`);
+                
+                if (checkRes.status === 200) {
+                    // Відео готове!
+                    const result = await checkRes.json();
+                    clearInterval(pollInterval); // Зупиняємо таймер
+                    
+                    status.innerText = "✨ Готово!";
+                    resultDiv.innerHTML = `
+                        <video controls autoplay loop style="width:100%; border-radius:12px;">
+                            <source src="${result.video.url}" type="video/mp4">
+                        </video>
+                        <br>
+                        <a href="${result.video.url}" target="_blank" style="color: #007bff; text-decoration: none; font-weight: bold;">
+                            🔗 Відкрити пряме посилання на відео
+                        </a>
+                    `;
+                } else if (checkRes.status === 202) {
+                    // Ще в процесі
+                    status.innerText = "⏳ Нейромережа працює над відео... (це зазвичай 1-2 хв)";
+                } else {
+                    // Якась інша помилка при перевірці
+                    console.error("Помилка при перевірці статусу:", await checkRes.text());
+                }
+            } catch (pollError) {
+                console.error("Помилка зв'язку під час опитування:", pollError);
+            }
+        }, 5000); // Перевіряємо кожні 5 секунд
+
     } catch (e) {
-        console.error("Помилка fetch:", e);
-        status.innerText = "Помилка зв'язку.";
+        console.error("Критична помилка fetch:", e);
+        status.innerText = "❌ Помилка зв'язку з сервером. Перевір, чи запущений Railway.";
     }
 };
