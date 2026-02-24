@@ -2,54 +2,59 @@ const express = require('express');
 const { fal } = require("@fal-ai/client");
 const app = express();
 
+// 1. ПАРСИНГ JSON (має бути на самому початку)
 app.use(express.json());
-app.use(express.static('public'));
 
-// Логгер для діагностики - ми побачимо кожен клік у логах Railway
+// 2. ДІАГНОСТИКА: цей лог покаже кожен запит у консолі Railway
 app.use((req, res, next) => {
-    console.log(`📡 Запит: ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] 📡 Запит: ${req.method} ${req.url}`);
     next();
 });
 
 const resultsStore = {};
-process.env.FAL_KEY = process.env.FAL_KEY || "ТВІЙ_КЛЮЧ";
 
-// 1. Ендпоінт для запуску
+// Переконайся, що FAL_KEY додано у Variables на Railway!
+const FAL_KEY = process.env.FAL_KEY;
+
+// 3. API МАРШРУТИ (Обов'язково ПЕРЕД static)
 app.post('/start', async (req, res) => {
+    console.log("📥 Спроба запуску генерації...");
     try {
         const { image_url, prompt } = req.body;
         
-        // Формуємо URL вебхука професійно
+        if (!image_url) {
+            console.error("❌ Помилка: image_url порожній");
+            return res.status(400).json({ error: "Вставте посилання на фото" });
+        }
+
         const domain = process.env.RAILWAY_PUBLIC_DOMAIN || req.get('host');
         const protocol = domain.includes('localhost') ? 'http' : 'https';
         const webhookUrl = `${protocol}://${domain}/webhook`;
 
-        console.log(`🚀 Подаю в чергу. Webhook полетів на: ${webhookUrl}`);
+        console.log(`🚀 Надсилаю в Fal.ai. Webhook: ${webhookUrl}`);
 
         const { request_id } = await fal.queue.submit("fal-ai/ltx-video", {
-            input: { image_url, prompt: prompt || "realistic motion" },
+            input: { image_url, prompt: prompt || "natural motion" },
             webhook_url: webhookUrl
         });
         
+        console.log(`✅ Успішно! ID запиту: ${request_id}`);
         res.json({ request_id });
     } catch (error) {
-        console.error("❌ Помилка старту:", error.message);
+        console.error("❌ Помилка Fal API:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// 2. Приймач Webhook
 app.post('/webhook', (req, res) => {
     const { request_id, payload, status } = req.body;
-    console.log(`🔔 Webhook отримано для ID: ${request_id} (Статус: ${status})`);
-    
+    console.log(`🔔 Отримано Webhook для ${request_id}. Статус: ${status}`);
     if (status === "COMPLETED") {
         resultsStore[request_id] = payload;
     }
     res.status(200).send("OK");
 });
 
-// 3. Перевірка статусу
 app.get('/check/:id', (req, res) => {
     const result = resultsStore[req.params.id];
     if (result) {
@@ -59,5 +64,11 @@ app.get('/check/:id', (req, res) => {
     }
 });
 
+// 4. СТАТИЧНІ ФАЙЛИ (після всіх API)
+app.use(express.static('public'));
+
+// 5. ЗАПУСК
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Сервер запущено на порту ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Сервер для вашого стартапу запущено на порту ${PORT}`);
+});

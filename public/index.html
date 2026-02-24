@@ -3,33 +3,33 @@ document.getElementById('btn').onclick = async () => {
     const resultDiv = document.getElementById('result');
     const imgUrl = document.getElementById('imgUrl').value;
 
-    if (!imgUrl) return alert("Встав посилання!");
+    status.innerText = "🚀 Відправка...";
 
-    status.innerText = "🎬 Запит надіслано...";
-    
     try {
-        const startRes = await fetch('/start', {
+        const response = await fetch('/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_url: imgUrl, prompt: document.getElementById('prompt').value })
+            body: JSON.stringify({ 
+                image_url: imgUrl, 
+                prompt: document.getElementById('prompt').value 
+            })
         });
-        
-        const { request_id } = await startRes.json();
-        
-        // Опитуємо Твій сервер кожні 3 секунди (це безкоштовно і швидко)
-        const poll = setInterval(async () => {
-            status.innerText = "⏳ Очікуємо сигнал від нейромережі...";
-            const res = await fetch(`/check/${request_id}`);
-            
-            if (res.status === 200) {
-                const data = await res.json();
-                clearInterval(poll);
-                status.innerText = "✅ Відео готове!";
-                resultDiv.innerHTML = `<video controls src="${data.video.url}"></video>`;
-            }
-        }, 3000);
 
+        // Цей блок покаже нам правду
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Сервер відповів помилкою:", errorText);
+            status.innerText = "Помилка сервера. Дивись консоль (F12).";
+            return;
+        }
+
+        const data = await response.json();
+        const request_id = data.request_id;
+        
+        // Далі твій цикл перевірки...
+        // ...
     } catch (e) {
-        status.innerText = "Помилка зв'язку з сервером.";
+        console.error("Помилка fetch:", e);
+        status.innerText = "Помилка зв'язку.";
     }
 };
