@@ -3,120 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Video Generator Pro</title>
+    <title>AI Video Generator Pro | 3x Unique</title>
     <style>
-        body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; box-sizing: border-box; }
-        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 500px; margin-bottom: 2rem; }
-        h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; font-weight: 700; }
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; box-sizing: border-box; }
+        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 600px; margin-bottom: 2rem; position: relative; }
+        h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; }
         
-        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a4a4a; font-size: 14px; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 14px; margin-bottom: 0.5rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; transition: border 0.2s; background: white; }
-        input:focus, select:focus { border-color: #0052cc; box-shadow: 0 0 0 3px rgba(0,82,204,0.1); }
-        
-        /* Опис моделі */
-        .model-info { background: #f8faff; border: 1px solid #cce0ff; padding: 12px; border-radius: 8px; font-size: 13px; color: #0042a3; margin-bottom: 1.5rem; line-height: 1.4; display: flex; flex-direction: column; gap: 4px; }
-        .model-price { font-weight: 700; color: #008a00; }
+        .header-actions { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+        .gallery-btn { background: #e6f0ff; color: #0052cc; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .gallery-btn:hover { background: #cce0ff; }
 
-        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; font-weight: 500; margin-bottom: 1rem; position: relative; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 14px; }
+        input[type="text"], select { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; }
+        
+        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; margin-bottom: 1rem; position: relative; }
         .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; }
-        .drop-text { pointer-events: none; }
-        .divider { text-align: center; margin: 5px 0 15px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .drop-text { pointer-events: none; font-weight: 500;}
 
-        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s; margin-top: 10px; }
-        button.primary-btn:active { transform: scale(0.98); }
+        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
         button.primary-btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
         #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; font-weight: 500; }
         
-        .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
-        .action-btn { flex: 1; padding: 12px; border: 1.5px solid #e1e4e8; background: white; border-radius: 10px; font-weight: 600; color: #333; cursor: pointer; text-align: center; text-decoration: none; }
-        #result { margin-top: 1.5rem; text-align: center; }
-        video { width: 100%; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #000; }
+        /* Сітка з 3 відео */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 1.5rem; }
+        .video-card { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px; text-align: center; }
+        .video-card h3 { font-size: 13px; margin: 0 0 10px 0; color: #333; }
+        .video-card video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
+        .action-btn { display: inline-block; width: 100%; padding: 8px; border: 1px solid #0052cc; background: white; border-radius: 6px; font-weight: 600; color: #0052cc; cursor: pointer; text-decoration: none; font-size: 12px; box-sizing: border-box;}
+        
+        /* Галерея */
+        .gallery-overlay { display: none; background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.1); width: 100%; max-width: 800px; margin-top: 2rem; }
+        .gallery-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Генератор відео Pro</h1>
+    <div class="header-actions">
+        <button class="gallery-btn" id="toggleGallery">📂 Мої проекти</button>
+    </div>
+    
+    <h1>Генератор відео (Унікалізація)</h1>
 
-    <label for="modelSelect">🤖 Нейромережа</label>
+    <label>🤖 Модель для генерації</label>
     <select id="modelSelect">
-        <optgroup label="📷 Фото у Відео (Image-to-Video)">
-            <option value="kling">Kling Video (2.0 Master / 3.0 Pro)</option>
-            <option value="luma">Luma Dream Machine (v1.5)</option>
-            <option value="minimax-img">MiniMax (Hailuo AI Video-01)</option>
-        </optgroup>
-        <optgroup label="📝 Текст у Відео (Text-to-Video)">
-            <option value="minimax-text">MiniMax Hailuo-02</option>
-            <option value="wan">Wan 2.5 (Open Source)</option>
-            <option value="hunyuan">Hunyuan Video</option>
-        </optgroup>
+        <option value="kling">Kling Video (Абсурд / CCTV)</option>
+        <option value="luma">Luma Dream Machine (Мікровсесвіти / Діорами)</option>
+        <option value="minimax-img">Veo 3 / MiniMax (Сюрреалістичний ASMR)</option>
     </select>
 
-    <div class="model-info" id="modelInfo">
-        <span id="modelDesc">Гіперреалізм, ідеальна фізика авто та міста. Найкращий вибір для фото.</span>
-        <span class="model-price">Орієнтовна ціна: ~$0.40 / 5 сек</span>
+    <div class="drop-zone" id="dropZone">
+        <span class="drop-text" id="dropText">📂 Перетягніть стартовий кадр (від Nano Banana)</span>
+        <img id="imagePreview" src="" alt="Preview">
+        <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" style="display: none;">
     </div>
 
-    <div id="imageSection">
-        <label>Зображення (Перетягніть або натисніть)</label>
-        <div class="drop-zone" id="dropZone">
-            <span class="drop-text" id="dropText">📂 Перетягніть фото сюди</span>
-            <img id="imagePreview" src="" alt="Preview">
-            <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" style="display: none;">
-        </div>
-        <div class="divider">— або —</div>
-        <input type="text" id="imgUrl" placeholder="Пряме посилання (https://...)">
-    </div>
+    <label for="prompt">Що має відбуватися? (Промпт)</label>
+    <input type="text" id="prompt" placeholder="Наприклад: zooming into a micro city">
 
-    <label for="prompt" style="margin-top: 1rem;">Що має відбуватися? (Промпт)</label>
-    <input type="text" id="prompt" placeholder="Наприклад: drone flyover, cinematic lighting">
-
-    <button id="btn" class="primary-btn">✨ Згенерувати відео</button>
+    <button id="btn" class="primary-btn">✨ Згенерувати 3 унікальні відео</button>
 
     <div id="progressContainer" class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
     <p id="status"></p>
-    <div id="result"></div>
+    
+    <div id="result" class="video-grid"></div>
+</div>
+
+<div class="gallery-overlay" id="galleryOverlay">
+    <h2>Історія генерацій</h2>
+    <div class="gallery-list" id="galleryGrid"></div>
 </div>
 
 <script>
-    // БАЗА ДАНИХ ОПИСІВ МОДЕЛЕЙ
-    const modelDetails = {
-        "kling": { desc: "Гіперреалізм, ідеальна фізика авто, світла та міста. Найкращий вибір для статичних фото.", price: "~$0.40 / 5 сек" },
-        "luma": { desc: "Бог операторської роботи. Ідеально для динамічних прольотів (drone, zoom) та зміни ракурсу.", price: "~$0.35 / 5 сек" },
-        "minimax-img": { desc: "Експерт з людей. Оживляє пішоходів та обличчя без моторошних мутацій.", price: "~$0.40 / 5 сек" },
-        "minimax-text": { desc: "Точне дотримання режисерських команд та складних текстових промптів.", price: "~$0.48 / 5 сек" },
-        "wan": { desc: "Бюджетний монстр. Відкрита модель з відмінним співвідношенням ціна/якість.", price: "~$0.25 / 5 сек" },
-        "hunyuan": { desc: "Висока кінематографічність тексту. Добре працює з пейзажами.", price: "~$0.30 / 5 сек" }
-    };
-
-    // ОНОВЛЕННЯ ОПИСУ ПРИ ВИБОРІ
-    const modelSelect = document.getElementById('modelSelect');
-    const modelDesc = document.getElementById('modelDesc');
-    const modelPrice = document.querySelector('.model-price');
-    const imageSection = document.getElementById('imageSection');
-
-    modelSelect.addEventListener('change', (e) => {
-        const selected = e.target.value;
-        modelDesc.innerText = modelDetails[selected].desc;
-        modelPrice.innerText = `Орієнтовна ціна: ${modelDetails[selected].price}`;
-        
-        // Ховаємо блок з фото, якщо це Text-to-Video модель
-        if (selected === 'wan' || selected === 'hunyuan' || selected === 'minimax-text') {
-            imageSection.style.display = 'none';
-        } else {
-            imageSection.style.display = 'block';
-        }
-    });
-
-    // DRAG & DROP
+    // Drag & Drop
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
     const dropText = document.getElementById('dropText');
-    const imgUrlInput = document.getElementById('imgUrl');
     let base64Image = null;
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -127,21 +93,45 @@
         if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
-    imgUrlInput.addEventListener('input', () => {
-        if (imgUrlInput.value.trim() !== "") { base64Image = null; imagePreview.style.display = 'none'; dropText.style.display = 'block'; fileInput.value = ""; }
-    });
 
     function handleFile(file) {
         if (!file.type.startsWith('image/')) return alert('Тільки зображення!');
         const reader = new FileReader();
         reader.onload = (e) => {
             base64Image = e.target.result;
-            imagePreview.src = base64Image; imagePreview.style.display = 'block'; dropText.style.display = 'none'; imgUrlInput.value = "";
+            imagePreview.src = base64Image; imagePreview.style.display = 'block'; dropText.style.display = 'none';
         };
         reader.readAsDataURL(file);
     }
 
-    // ЛОГІКА ГЕНЕРАЦІЇ
+    // Галерея
+    const toggleGallery = document.getElementById('toggleGallery');
+    const galleryOverlay = document.getElementById('galleryOverlay');
+    
+    toggleGallery.onclick = () => {
+        const isHidden = galleryOverlay.style.display === 'none' || galleryOverlay.style.display === '';
+        galleryOverlay.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) loadGallery();
+    };
+
+    function loadGallery() {
+        const saved = JSON.parse(localStorage.getItem('ai_videos_v2')) || [];
+        const grid = document.getElementById('galleryGrid');
+        grid.innerHTML = saved.map(item => `
+            <div class="video-card">
+                <h3>${item.prompt}</h3>
+                <video controls src="${item.urls.tiktok}"></video>
+            </div>
+        `).reverse().join('');
+    }
+
+    function saveToGallery(prompt, urls) {
+        const saved = JSON.parse(localStorage.getItem('ai_videos_v2')) || [];
+        saved.push({ prompt, urls, date: new Date().toISOString() });
+        localStorage.setItem('ai_videos_v2', JSON.stringify(saved));
+    }
+
+    // Генерація
     document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -149,83 +139,75 @@
         const progressContainer = document.getElementById('progressContainer');
         const btn = document.getElementById('btn');
 
-        const selectedModel = modelSelect.value;
-        const isImageModel = !['wan', 'hunyuan', 'minimax-text'].includes(selectedModel);
-        const finalImageSource = base64Image || imgUrlInput.value;
-
-        if (isImageModel && !finalImageSource) {
-            return status.innerText = "❌ Для цієї моделі обов'язково потрібне фото!";
-        }
-
+        if (!base64Image) return status.innerText = "❌ Додайте фото для стартового кадру!";
         const prompt = document.getElementById('prompt').value;
+        const modelSelect = document.getElementById('modelSelect').value;
 
-        status.innerText = "🚀 Відправка запиту на сервер...";
+        status.innerText = "🚀 Запуск... (генерація займе час)";
         resultDiv.innerHTML = ""; btn.disabled = true;
-        progressContainer.style.display = 'block'; progressBar.style.width = '15%';
+        progressContainer.style.display = 'block'; progressBar.style.width = '10%';
 
-        let attempts = 0; const MAX_ATTEMPTS = 60;
+        let attempts = 0; const MAX_ATTEMPTS = 120; // Збільшено час, бо працює FFmpeg
         
         try {
-            const payload = {
-                model_id: selectedModel,
-                prompt: prompt
-            };
-            if (isImageModel) payload.image_url = finalImageSource;
-
-            // 1. ЗАПУСК
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ image_url: base64Image, prompt: prompt, model_id: modelSelect })
             });
 
-            if (!response.ok) throw new Error("Помилка сервера при запуску");
-
-            const data = await response.json();
-            const { request_id, endpoint } = data; // Отримуємо і ID, і Ендпоінт
+            if (!response.ok) throw new Error("Помилка підключення");
+            const { request_id, endpoint } = await response.json();
             
-            status.innerText = "⏳ Модель генерує відео...";
-
-            // 2. ОПИТУВАННЯ
             const pollInterval = setInterval(async () => {
                 attempts++;
-                progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100 * 2, 90)}%`;
+                progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100, 95)}%`;
 
                 if (attempts > MAX_ATTEMPTS) {
-                    clearInterval(pollInterval); status.innerText = "⏰ Час вичерпано."; btn.disabled = false; progressContainer.style.display = 'none'; return;
+                    clearInterval(pollInterval); status.innerText = "⏰ Таймаут (Занадто довго)"; btn.disabled = false; return;
                 }
                 
                 try {
-                    // ЗВЕРНИ УВАГУ: Тепер ми відправляємо POST запит на /status з ID та endpoint
                     const checkRes = await fetch(`/status`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ request_id, endpoint })
                     });
                     
-                    if (checkRes.status === 200) {
-                        const result = await checkRes.json();
-                        const finalVideoUrl = result.data?.video?.url || result.video?.url || result.video_url || result.url;
+                    const data = await checkRes.json();
 
-                        if (finalVideoUrl) {
-                            clearInterval(pollInterval);
-                            progressBar.style.width = '100%'; status.innerText = "✨ Готово!";
-                            setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
+                    if (checkRes.status === 200 && data.status === 'COMPLETED') {
+                        clearInterval(pollInterval);
+                        progressBar.style.width = '100%'; status.innerText = "✨ Відео успішно унікалізовано!";
+                        setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
 
-                            resultDiv.innerHTML = `
-                                <video controls autoplay loop>
-                                    <source src="${finalVideoUrl}" type="video/mp4">
-                                </video>
-                                <div class="action-buttons">
-                                    <a href="${finalVideoUrl}" target="_blank" class="action-btn">⬇️ Завантажити відео</a>
-                                </div>
-                            `;
-                            btn.disabled = false;
-                        }
+                        const { tiktok, insta, youtube } = data.videos;
+
+                        resultDiv.innerHTML = `
+                            <div class="video-card">
+                                <h3>🎵 TikTok</h3>
+                                <video controls autoplay loop muted><source src="${tiktok}" type="video/mp4"></video>
+                                <a href="${tiktok}" download class="action-btn">⬇️ Завантажити</a>
+                            </div>
+                            <div class="video-card">
+                                <h3>📸 Instagram</h3>
+                                <video controls autoplay loop muted><source src="${insta}" type="video/mp4"></video>
+                                <a href="${insta}" download class="action-btn">⬇️ Завантажити</a>
+                            </div>
+                            <div class="video-card">
+                                <h3>▶️ YouTube Shorts</h3>
+                                <video controls autoplay loop muted><source src="${youtube}" type="video/mp4"></video>
+                                <a href="${youtube}" download class="action-btn">⬇️ Завантажити</a>
+                            </div>
+                        `;
+                        saveToGallery(prompt, data.videos);
+                        btn.disabled = false;
                     } else if (checkRes.status === 202) {
-                        status.innerText = `⏳ Рендеринг кадрів...`;
+                        status.innerText = `⏳ ${data.status}`;
+                    } else if (checkRes.status === 500) {
+                         clearInterval(pollInterval); status.innerText = "❌ Помилка обробки на сервері"; btn.disabled = false;
                     }
-                } catch (pollError) { console.error("Помилка:", pollError); }
+                } catch (e) { console.error(e); }
             }, 5000);
 
         } catch (e) {
