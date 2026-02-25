@@ -68,21 +68,50 @@ async function randomizeVideo(inputPath, platform) {
 // === БЛОК 4: API ЗАПУСКУ (/start) ===
 app.post('/start', async (req, res) => {
     try {
-        const { image_url, prompt, model_id } = req.body;
+        // ДОДАНО: Приймаємо нові параметри з фронтенду
+        const { image_url, prompt, model_id, aspect_ratio, loop_video } = req.body;
         const endpoint = MODEL_ENDPOINTS[model_id] || MODEL_ENDPOINTS["kling"];
 
         if (!image_url) return res.status(400).json({ error: "Потрібне зображення для стартового кадру" });
 
-        // Відправляємо фото та промпт у Fal.ai
+        let finalImageUrl = image_url;
+
+        if (image_url.startsWith('data:image')) {
+            console.log("☁️ Завантаження фото у внутрішню хмару Fal...");
+            const matches = image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                const buffer = Buffer.from(matches[2], 'base64');
+                const uploadResult = await fal.storage.upload(buffer);
+                finalImageUrl = uploadResult.url;
+            }
+        } else if (image_url.includes('googleusercontent')) {
+             return res.status(400).json({ error: "Збережіть фото на ПК і перетягніть у вікно." });
+        }
+
+        console.log(`🚀 Запуск моделі ${endpoint} у форматі ${aspect_ratio || "16:9"}...`);
+
+        // ДОДАНО: Розширений пакет налаштувань для здешевлення та контролю
+        const payloadInput = { 
+            prompt: prompt || "cinematic scene", 
+            image_url: finalImageUrl,
+            aspect_ratio: aspect_ratio || "9:16", // Вертикальний за замовчуванням
+            expand_prompt: false // ЗДЕШЕВЛЕННЯ: Вимикаємо авто-дописування промпту нейромережею
+        };
+
+        // Якщо користувач увімкнув зациклення (дуже круто для Luma)
+        if (loop_video) {
+            payloadInput.loop = true;
+        }
+
         const { request_id } = await fal.queue.submit(endpoint, {
-            input: { prompt: prompt || "cinematic scene", image_url: image_url }
+            input: payloadInput
         });
         
         jobStates[request_id] = { status: 'generating' };
         res.json({ request_id, endpoint }); 
     } catch (error) {
         console.error("❌ Помилка Start:", error.message);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message || "Помилка при запуску генерації" });
     }
 });
 

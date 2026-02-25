@@ -73,6 +73,23 @@
     <label for="prompt">Що має відбуватися? (Промпт)</label>
     <input type="text" id="prompt" placeholder="Наприклад: Stop-motion animation, slow camera push-in">
 
+    <div style="display: flex; gap: 15px; margin-bottom: 1.5rem; background: #f8faff; padding: 15px; border-radius: 10px; border: 1px solid #e1e4e8;">
+        <div style="flex: 1;">
+            <label for="aspectRatio" style="margin-bottom: 5px;">📱 Формат відео</label>
+            <select id="aspectRatio" style="margin-bottom: 0; padding: 10px;">
+                <option value="9:16">9:16 (TikTok / Shorts)</option>
+                <option value="16:9">16:9 (YouTube Горизонтально)</option>
+                <option value="1:1">1:1 (Instagram Квадрат)</option>
+            </select>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; margin-top: 15px;">
+                <input type="checkbox" id="loopVideo" style="width: 20px; height: 20px; cursor: pointer;">
+                <span>🔄 Безшовне зациклення (Loop)</span>
+            </label>
+        </div>
+    </div>
+
     <button id="btn" class="primary-btn">✨ Згенерувати 3 унікальні відео</button>
 
     <div id="progressContainer" class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
@@ -153,7 +170,8 @@
         localStorage.setItem('ai_videos_v2', JSON.stringify(saved));
     }
 
-document.getElementById('btn').onclick = async () => {
+    // 3. ЛОГІКА ЗАПУСКУ ТА ОПИТУВАННЯ
+    document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
         const progressBar = document.getElementById('progressBar');
@@ -166,6 +184,10 @@ document.getElementById('btn').onclick = async () => {
         
         const prompt = document.getElementById('prompt').value;
         const modelSelect = document.getElementById('modelSelect').value;
+        
+        // Отримуємо значення з нових налаштувань
+        const aspect_ratio = document.getElementById('aspectRatio').value;
+        const loop_video = document.getElementById('loopVideo').checked;
 
         status.innerText = "🚀 Запуск... (генерація та унікалізація займуть час)";
         resultDiv.innerHTML = ""; btn.disabled = true;
@@ -174,11 +196,17 @@ document.getElementById('btn').onclick = async () => {
         let attempts = 0; const MAX_ATTEMPTS = 120; // Опитування до 10 хвилин
         
         try {
-            // Крок 1: Відправляємо запит
+            // Крок 1: Відправляємо запит з новими параметрами
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image_url: finalImageSource, prompt: prompt, model_id: modelSelect })
+                body: JSON.stringify({ 
+                    image_url: finalImageSource, 
+                    prompt: prompt, 
+                    model_id: modelSelect,
+                    aspect_ratio: aspect_ratio,
+                    loop_video: loop_video
+                })
             });
 
             if (!response.ok) throw new Error("Помилка підключення до сервера");
@@ -248,4 +276,4 @@ document.getElementById('btn').onclick = async () => {
     };
 </script>
 </body>
-</html>    
+</html>
