@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Video Generator Pro | 3x Unique</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; box-sizing: border-box; }
+        /* Глобальне правило, щоб ніякі блоки більше не вилазили за краї */
+        * { box-sizing: border-box; }
+
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; }
         .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 600px; margin-bottom: 2rem; position: relative; }
         h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; }
         
@@ -14,27 +17,30 @@
         .gallery-btn:hover { background: #cce0ff; }
 
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 14px; }
-        input[type="text"], select { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; }
+        input[type="text"], select { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; font-size: 15px; outline: none; }
         
-        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; margin-bottom: 1rem; position: relative; }
-        .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; }
+        /* Виправлена пунктирна зона */
+        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; margin-bottom: 1rem; position: relative; transition: all 0.2s; }
+        .drop-zone:hover, .drop-zone.dragover { background: #e6f0ff; }
+        .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; object-fit: contain; }
         .drop-text { pointer-events: none; font-weight: 500;}
 
-        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .divider { text-align: center; margin: 5px 0 15px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+        button.primary-btn:active { transform: scale(0.98); }
         button.primary-btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
         #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; font-weight: 500; }
         
-        /* Сітка з 3 відео */
         .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 1.5rem; }
         .video-card { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px; text-align: center; }
         .video-card h3 { font-size: 13px; margin: 0 0 10px 0; color: #333; }
         .video-card video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
         .action-btn { display: inline-block; width: 100%; padding: 8px; border: 1px solid #0052cc; background: white; border-radius: 6px; font-weight: 600; color: #0052cc; cursor: pointer; text-decoration: none; font-size: 12px; box-sizing: border-box;}
         
-        /* Галерея */
         .gallery-overlay { display: none; background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.1); width: 100%; max-width: 800px; margin-top: 2rem; }
         .gallery-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     </style>
@@ -55,11 +61,15 @@
         <option value="minimax-img">Veo 3 / MiniMax (Сюрреалістичний ASMR)</option>
     </select>
 
+    <label>Зображення (Стартовий кадр)</label>
     <div class="drop-zone" id="dropZone">
-        <span class="drop-text" id="dropText">📂 Перетягніть стартовий кадр (від Nano Banana)</span>
+        <span class="drop-text" id="dropText">📂 Перетягніть фото або натисніть</span>
         <img id="imagePreview" src="" alt="Preview">
         <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" style="display: none;">
     </div>
+    
+    <div class="divider">— або —</div>
+    <input type="text" id="imgUrl" placeholder="Вставте пряме посилання (https://...)">
 
     <label for="prompt">Що має відбуватися? (Промпт)</label>
     <input type="text" id="prompt" placeholder="Наприклад: zooming into a micro city">
@@ -78,33 +88,47 @@
 </div>
 
 <script>
-    // Drag & Drop
+    // --- Обробка файлів та посилань ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
     const dropText = document.getElementById('dropText');
+    const imgUrlInput = document.getElementById('imgUrl');
     let base64Image = null;
 
     dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#e6f0ff'; });
-    dropZone.addEventListener('dragleave', () => dropZone.style.background = '#f8faff');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault(); dropZone.style.background = '#f8faff';
+        e.preventDefault(); dropZone.classList.remove('dragover');
         if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+    // Якщо користувач вводить лінк - скидаємо файл
+    imgUrlInput.addEventListener('input', () => {
+        if (imgUrlInput.value.trim() !== "") {
+            base64Image = null;
+            imagePreview.style.display = 'none';
+            dropText.style.display = 'block';
+            fileInput.value = "";
+        }
+    });
 
     function handleFile(file) {
         if (!file.type.startsWith('image/')) return alert('Тільки зображення!');
         const reader = new FileReader();
         reader.onload = (e) => {
             base64Image = e.target.result;
-            imagePreview.src = base64Image; imagePreview.style.display = 'block'; dropText.style.display = 'none';
+            imagePreview.src = base64Image; 
+            imagePreview.style.display = 'block'; 
+            dropText.style.display = 'none';
+            imgUrlInput.value = ""; // Скидаємо лінк, якщо завантажили файл
         };
         reader.readAsDataURL(file);
     }
 
-    // Галерея
+    // --- Галерея ---
     const toggleGallery = document.getElementById('toggleGallery');
     const galleryOverlay = document.getElementById('galleryOverlay');
     
@@ -119,7 +143,7 @@
         const grid = document.getElementById('galleryGrid');
         grid.innerHTML = saved.map(item => `
             <div class="video-card">
-                <h3>${item.prompt}</h3>
+                <h3>${item.prompt || 'Без промпту'}</h3>
                 <video controls src="${item.urls.tiktok}"></video>
             </div>
         `).reverse().join('');
@@ -131,7 +155,7 @@
         localStorage.setItem('ai_videos_v2', JSON.stringify(saved));
     }
 
-    // Генерація
+    // --- Генерація ---
     document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -139,24 +163,28 @@
         const progressContainer = document.getElementById('progressContainer');
         const btn = document.getElementById('btn');
 
-        if (!base64Image) return status.innerText = "❌ Додайте фото для стартового кадру!";
+        // Визначаємо джерело фото (файл або лінк)
+        const finalImageSource = base64Image || imgUrlInput.value.trim();
+
+        if (!finalImageSource) return status.innerText = "❌ Додайте фото або вставте посилання!";
+        
         const prompt = document.getElementById('prompt').value;
         const modelSelect = document.getElementById('modelSelect').value;
 
-        status.innerText = "🚀 Запуск... (генерація займе час)";
+        status.innerText = "🚀 Запуск... (генерація та унікалізація займуть час)";
         resultDiv.innerHTML = ""; btn.disabled = true;
         progressContainer.style.display = 'block'; progressBar.style.width = '10%';
 
-        let attempts = 0; const MAX_ATTEMPTS = 120; // Збільшено час, бо працює FFmpeg
+        let attempts = 0; const MAX_ATTEMPTS = 120;
         
         try {
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image_url: base64Image, prompt: prompt, model_id: modelSelect })
+                body: JSON.stringify({ image_url: finalImageSource, prompt: prompt, model_id: modelSelect })
             });
 
-            if (!response.ok) throw new Error("Помилка підключення");
+            if (!response.ok) throw new Error("Помилка підключення до сервера");
             const { request_id, endpoint } = await response.json();
             
             const pollInterval = setInterval(async () => {
@@ -178,7 +206,7 @@
 
                     if (checkRes.status === 200 && data.status === 'COMPLETED') {
                         clearInterval(pollInterval);
-                        progressBar.style.width = '100%'; status.innerText = "✨ Відео успішно унікалізовано!";
+                        progressBar.style.width = '100%'; status.innerText = "✨ Всі 3 версії відео готові!";
                         setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
 
                         const { tiktok, insta, youtube } = data.videos;
@@ -205,7 +233,10 @@
                     } else if (checkRes.status === 202) {
                         status.innerText = `⏳ ${data.status}`;
                     } else if (checkRes.status === 500) {
-                         clearInterval(pollInterval); status.innerText = "❌ Помилка обробки на сервері"; btn.disabled = false;
+                         clearInterval(pollInterval); 
+                         status.innerText = `❌ Помилка: ${data.error || 'Невідомий збій на сервері'}`; 
+                         btn.disabled = false;
+                         progressContainer.style.display = 'none';
                     }
                 } catch (e) { console.error(e); }
             }, 5000);
