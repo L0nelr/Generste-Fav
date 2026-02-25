@@ -65,10 +65,9 @@ async function randomizeVideo(inputPath, platform) {
     });
 }
 
-// === БЛОК 4: API ЗАПУСКУ (/start) ===
+// === БЛОК 4: API ЗАПУСКУ (/start) — ОНОВЛЕНО: СТРОГІ МЕЖІ ТА УНІКАЛІЗАЦІЯ ===
 app.post('/start', async (req, res) => {
     try {
-        // ДОДАНО: Приймаємо нові параметри з фронтенду
         const { image_url, prompt, model_id, aspect_ratio, loop_video } = req.body;
         const endpoint = MODEL_ENDPOINTS[model_id] || MODEL_ENDPOINTS["kling"];
 
@@ -76,33 +75,55 @@ app.post('/start', async (req, res) => {
 
         let finalImageUrl = image_url;
 
+        // 1. Оптимізація завантаження (Base64 -> Fal Cloud)
         if (image_url.startsWith('data:image')) {
-            console.log("☁️ Завантаження фото у внутрішню хмару Fal...");
+            console.log("☁️ Завантаження фото у хмару Fal для стабільності...");
             const matches = image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
             if (matches && matches.length === 3) {
                 const buffer = Buffer.from(matches[2], 'base64');
                 const uploadResult = await fal.storage.upload(buffer);
                 finalImageUrl = uploadResult.url;
             }
-        } else if (image_url.includes('googleusercontent')) {
-             return res.status(400).json({ error: "Збережіть фото на ПК і перетягніть у вікно." });
-        }
+        } 
 
-        console.log(`🚀 Запуск моделі ${endpoint} у форматі ${aspect_ratio || "16:9"}...`);
+        // 2. СИСТЕМА НЕГАТИВНИХ ПРОМПТІВ (Профілактика деформацій та мила)
+        // Ці параметри жорстко відсікають артефакти нейромереж [cite: 84]
+        const negative_prompt = "blurry, distorted, low quality, morphing, flickering, out of focus, deformed objects, messy textures, overexposed, grainy (except for CCTV), low resolution, extra limbs, unnatural movement";
 
-        // ДОДАНО: Розширений пакет налаштувань для здешевлення та контролю
+        // 3. МОДИФІКАЦІЯ ПРОМПТУ (Додавання строгих меж стилю та камери)
+        // Ми вшиваємо технічні параметри прямо в запит для максимальної якості
+        const enhancedPrompt = `
+            ${prompt}. 
+            Style: Hyper-realistic with high color saturation. 
+            Camera: Locked steady shot, extreme macro focus on details. 
+            Quality: 4k cinematic render, zero motion blur, consistent light reflections.
+        `.trim();
+
+        console.log(`🚀 Запуск ${model_id} | Формат: ${aspect_ratio || "9:16"} | Loop: ${loop_video}`);
+
+        // 4. ФОРМУВАННЯ ПАРАМЕТРІВ ПІД КОНКРЕТНУ МОДЕЛЬ
         const payloadInput = { 
-            prompt: prompt || "cinematic scene", 
+            prompt: enhancedPrompt, 
             image_url: finalImageUrl,
-            aspect_ratio: aspect_ratio || "9:16", // Вертикальний за замовчуванням
-            expand_prompt: false // ЗДЕШЕВЛЕННЯ: Вимикаємо авто-дописування промпту нейромережею
+            aspect_ratio: aspect_ratio || "9:16",
+            expand_prompt: false // Вимикаємо, щоб не переплачувати та не втрачати контроль над промптом [cite: 13, 105]
         };
 
-        // Якщо користувач увімкнув зациклення (дуже круто для Luma)
-        if (loop_video) {
-            payloadInput.loop = true;
+        // Логіка для Luma (Ray-2): ідеально для ASMR та діорам [cite: 14, 18, 78]
+        if (model_id === "luma") {
+            payloadInput.loop = loop_video || false; // Безшовне зациклення підтримується тут [cite: 16, 67]
+            payloadInput.negative_prompt = negative_prompt;
+        } 
+        
+        // Логіка для Kling: найкраща фізика та консистентність [cite: 10, 12, 51]
+        if (model_id === "kling") {
+            // Kling не підтримує параметр 'loop', його надсилання викликає Bad Request
+            payloadInput.mode = "pro"; // Використовуємо Pro режим для якісної фізики [cite: 10]
+            // Для Kling ми додаємо негативні вказівки прямо в основний промпт, якщо модель не має окремого поля
+            payloadInput.prompt += ` [Negative: ${negative_prompt}]`;
         }
 
+        // 5. ВІДПРАВКА ЗАПИТУ
         const { request_id } = await fal.queue.submit(endpoint, {
             input: payloadInput
         });
