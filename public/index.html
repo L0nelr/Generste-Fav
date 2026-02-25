@@ -6,102 +6,73 @@
     <title>AI Video Generator Pro</title>
     <style>
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; box-sizing: border-box; }
-        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 500px; margin-bottom: 2rem; transition: all 0.3s ease; }
+        .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 500px; margin-bottom: 2rem; }
         h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; font-weight: 700; }
         
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a4a4a; font-size: 14px; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; transition: all 0.2s; }
-        input:focus { border-color: #0052cc; box-shadow: 0 0 0 3px rgba(0,82,204,0.1); outline: none; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 14px; margin-bottom: 0.5rem; border: 1.5px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; transition: border 0.2s; background: white; }
+        input:focus, select:focus { border-color: #0052cc; box-shadow: 0 0 0 3px rgba(0,82,204,0.1); }
         
-        /* Стилі для Drag & Drop зони */
-        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #f8faff; color: #0052cc; font-weight: 500; box-sizing: border-box; margin-bottom: 1rem; position: relative; overflow: hidden; }
-        .drop-zone:hover, .drop-zone.dragover { background: #e6f0ff; border-color: #003d99; }
-        .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; object-fit: contain; }
+        /* Опис моделі */
+        .model-info { background: #f8faff; border: 1px solid #cce0ff; padding: 12px; border-radius: 8px; font-size: 13px; color: #0042a3; margin-bottom: 1.5rem; line-height: 1.4; display: flex; flex-direction: column; gap: 4px; }
+        .model-price { font-weight: 700; color: #008a00; }
+
+        .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; font-weight: 500; margin-bottom: 1rem; position: relative; }
+        .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; }
         .drop-text { pointer-events: none; }
         .divider { text-align: center; margin: 5px 0 15px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 
-        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; margin-top: 10px; }
-        button.primary-btn:hover { box-shadow: 0 6px 16px rgba(0,82,204,0.3); }
+        button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s; margin-top: 10px; }
         button.primary-btn:active { transform: scale(0.98); }
-        button.primary-btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
-
-        .toggle-settings-btn { width: 100%; background: none; border: none; color: #666; font-size: 14px; font-weight: 600; cursor: pointer; padding: 10px; text-align: left; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; border-radius: 8px; transition: background 0.2s; }
-        .toggle-settings-btn:hover { background: #f4f5f7; color: #333; }
-        .advanced-settings { display: none; background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease-out; }
-        .advanced-settings.active { display: block; }
-        .slider-container { margin-bottom: 1.5rem; }
-        .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .slider-val { font-weight: bold; color: #0052cc; }
-        input[type="range"] { width: 100%; margin: 0; cursor: pointer; accent-color: #0052cc; }
-
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        button.primary-btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
-        #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; min-height: 20px; font-weight: 500; }
+        #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; font-weight: 500; }
         
         .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
-        .action-btn { flex: 1; padding: 12px; border: 1.5px solid #e1e4e8; background: white; border-radius: 10px; font-weight: 600; color: #333; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; }
-        .action-btn:hover { background: #f8f9fa; border-color: #d1d5db; }
-        
+        .action-btn { flex: 1; padding: 12px; border: 1.5px solid #e1e4e8; background: white; border-radius: 10px; font-weight: 600; color: #333; cursor: pointer; text-align: center; text-decoration: none; }
         #result { margin-top: 1.5rem; text-align: center; }
         video { width: 100%; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #000; }
-        
-        .gallery { width: 100%; max-width: 800px; }
-        .gallery h2 { font-size: 20px; color: #1a1a1a; margin-bottom: 1rem; padding-left: 5px; border-left: 4px solid #0052cc; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .gallery-card { background: white; padding: 12px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .gallery-card video { border-radius: 10px; margin-bottom: 10px; width: 100%; }
-        .gallery-card .prompt-text { font-size: 13px; color: #666; margin-bottom: 10px; }
-        .delete-btn { width: 100%; padding: 8px; background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Генератор відео</h1>
+    <h1>Генератор відео Pro</h1>
 
-    <label>Зображення (Перетягніть або натисніть)</label>
-    
-    <div class="drop-zone" id="dropZone">
-        <span class="drop-text" id="dropText">📂 Перетягніть фото сюди або натисніть</span>
-        <img id="imagePreview" src="" alt="Preview">
-        <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" style="display: none;">
+    <label for="modelSelect">🤖 Нейромережа</label>
+    <select id="modelSelect">
+        <optgroup label="📷 Фото у Відео (Image-to-Video)">
+            <option value="kling">Kling Video (2.0 Master / 3.0 Pro)</option>
+            <option value="luma">Luma Dream Machine (v1.5)</option>
+            <option value="minimax-img">MiniMax (Hailuo AI Video-01)</option>
+        </optgroup>
+        <optgroup label="📝 Текст у Відео (Text-to-Video)">
+            <option value="minimax-text">MiniMax Hailuo-02</option>
+            <option value="wan">Wan 2.5 (Open Source)</option>
+            <option value="hunyuan">Hunyuan Video</option>
+        </optgroup>
+    </select>
+
+    <div class="model-info" id="modelInfo">
+        <span id="modelDesc">Гіперреалізм, ідеальна фізика авто та міста. Найкращий вибір для фото.</span>
+        <span class="model-price">Орієнтовна ціна: ~$0.40 / 5 сек</span>
     </div>
 
-    <div class="divider">— або —</div>
-    <input type="text" id="imgUrl" placeholder="Вставте пряме посилання (https://...)">
-
-    <label for="prompt">Що має відбуватися? (Промпт)</label>
-    <input type="text" id="prompt" placeholder="Наприклад: water flowing, camera zoom in">
-
-    <button type="button" class="toggle-settings-btn" id="toggleSettingsBtn">
-        <span>⚙️</span> Розширені налаштування
-    </button>
-
-    <div class="advanced-settings" id="advancedSettingsPanel">
-        <label for="negPrompt">Негативний промпт (Чого уникати)</label>
-        <input type="text" id="negPrompt" placeholder="blur, deformed, ugly, watermark, text">
-
-        <div class="slider-container">
-            <div class="slider-header">
-                <label for="guidance">Точність (Guidance Scale)</label>
-                <span class="slider-val" id="guidanceVal">3.5</span>
-            </div>
-            <input type="range" id="guidance" min="1" max="10" step="0.1" value="3.5">
+    <div id="imageSection">
+        <label>Зображення (Перетягніть або натисніть)</label>
+        <div class="drop-zone" id="dropZone">
+            <span class="drop-text" id="dropText">📂 Перетягніть фото сюди</span>
+            <img id="imagePreview" src="" alt="Preview">
+            <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" style="display: none;">
         </div>
-
-        <div class="slider-container">
-            <div class="slider-header">
-                <label for="steps">Кроки деталізації (Inference Steps)</label>
-                <span class="slider-val" id="stepsVal">30</span>
-            </div>
-            <input type="range" id="steps" min="10" max="50" step="1" value="30">
-        </div>
-
-        <label for="seed">Seed (Для повторення стилю)</label>
-        <input type="number" id="seed" placeholder="Залиште пустим для випадкового">
+        <div class="divider">— або —</div>
+        <input type="text" id="imgUrl" placeholder="Пряме посилання (https://...)">
     </div>
+
+    <label for="prompt" style="margin-top: 1rem;">Що має відбуватися? (Промпт)</label>
+    <input type="text" id="prompt" placeholder="Наприклад: drone flyover, cinematic lighting">
 
     <button id="btn" class="primary-btn">✨ Згенерувати відео</button>
 
@@ -110,118 +81,67 @@
     <div id="result"></div>
 </div>
 
-<div class="gallery" id="gallerySection" style="display: none;">
-    <h2>📂 Мої проекти</h2>
-    <div id="galleryGrid" class="gallery-grid"></div>
-</div>
-
 <script>
-    // --- ЛОГІКА DRAG & DROP ТА ФАЙЛІВ ---
+    // БАЗА ДАНИХ ОПИСІВ МОДЕЛЕЙ
+    const modelDetails = {
+        "kling": { desc: "Гіперреалізм, ідеальна фізика авто, світла та міста. Найкращий вибір для статичних фото.", price: "~$0.40 / 5 сек" },
+        "luma": { desc: "Бог операторської роботи. Ідеально для динамічних прольотів (drone, zoom) та зміни ракурсу.", price: "~$0.35 / 5 сек" },
+        "minimax-img": { desc: "Експерт з людей. Оживляє пішоходів та обличчя без моторошних мутацій.", price: "~$0.40 / 5 сек" },
+        "minimax-text": { desc: "Точне дотримання режисерських команд та складних текстових промптів.", price: "~$0.48 / 5 сек" },
+        "wan": { desc: "Бюджетний монстр. Відкрита модель з відмінним співвідношенням ціна/якість.", price: "~$0.25 / 5 сек" },
+        "hunyuan": { desc: "Висока кінематографічність тексту. Добре працює з пейзажами.", price: "~$0.30 / 5 сек" }
+    };
+
+    // ОНОВЛЕННЯ ОПИСУ ПРИ ВИБОРІ
+    const modelSelect = document.getElementById('modelSelect');
+    const modelDesc = document.getElementById('modelDesc');
+    const modelPrice = document.querySelector('.model-price');
+    const imageSection = document.getElementById('imageSection');
+
+    modelSelect.addEventListener('change', (e) => {
+        const selected = e.target.value;
+        modelDesc.innerText = modelDetails[selected].desc;
+        modelPrice.innerText = `Орієнтовна ціна: ${modelDetails[selected].price}`;
+        
+        // Ховаємо блок з фото, якщо це Text-to-Video модель
+        if (selected === 'wan' || selected === 'hunyuan' || selected === 'minimax-text') {
+            imageSection.style.display = 'none';
+        } else {
+            imageSection.style.display = 'block';
+        }
+    });
+
+    // DRAG & DROP
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
     const dropText = document.getElementById('dropText');
     const imgUrlInput = document.getElementById('imgUrl');
-    
-    let base64Image = null; // Тут зберігатимемо завантажене фото
+    let base64Image = null;
 
-    // Клік по зоні відкриває вікно вибору файлу
     dropZone.addEventListener('click', () => fileInput.click());
-
-    // Обробка перетягування
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#e6f0ff'; });
+    dropZone.addEventListener('dragleave', () => dropZone.style.background = '#f8faff');
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
-            handleFile(e.dataTransfer.files[0]);
-        }
+        e.preventDefault(); dropZone.style.background = '#f8faff';
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
-
-    // Обробка вибору файлу через вікно
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            handleFile(e.target.files[0]);
-        }
-    });
-
-    // Якщо користувач почав вводити URL, скидаємо завантажений файл
+    fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
     imgUrlInput.addEventListener('input', () => {
-        if (imgUrlInput.value.trim() !== "") {
-            base64Image = null;
-            imagePreview.style.display = 'none';
-            dropText.style.display = 'block';
-            fileInput.value = "";
-        }
+        if (imgUrlInput.value.trim() !== "") { base64Image = null; imagePreview.style.display = 'none'; dropText.style.display = 'block'; fileInput.value = ""; }
     });
 
     function handleFile(file) {
-        if (!file.type.startsWith('image/')) {
-            alert('❌ Будь ласка, завантажте лише зображення (JPG, PNG, WEBP)!');
-            return;
-        }
-        
-        // Читаємо файл і перетворюємо у Base64
+        if (!file.type.startsWith('image/')) return alert('Тільки зображення!');
         const reader = new FileReader();
         reader.onload = (e) => {
-            base64Image = e.target.result; // Зберігаємо код зображення
-            imagePreview.src = base64Image; // Показуємо прев'ю
-            imagePreview.style.display = 'block';
-            dropText.style.display = 'none';
-            imgUrlInput.value = ""; // Очищаємо поле з посиланням
+            base64Image = e.target.result;
+            imagePreview.src = base64Image; imagePreview.style.display = 'block'; dropText.style.display = 'none'; imgUrlInput.value = "";
         };
         reader.readAsDataURL(file);
     }
 
-    // --- UI ЛОГІКА (Акордеон та Повзунки) ---
-    const toggleBtn = document.getElementById('toggleSettingsBtn');
-    const settingsPanel = document.getElementById('advancedSettingsPanel');
-    toggleBtn.onclick = () => {
-        settingsPanel.classList.toggle('active');
-        toggleBtn.innerHTML = settingsPanel.classList.contains('active') ? '<span>⚙️</span> Приховати налаштування' : '<span>⚙️</span> Розширені налаштування';
-    };
-
-    document.getElementById('guidance').oninput = function() { document.getElementById('guidanceVal').innerHTML = this.value; }
-    document.getElementById('steps').oninput = function() { document.getElementById('stepsVal').innerHTML = this.value; }
-
-    // --- ГАЛЕРЕЯ ---
-    function loadGallery() {
-        const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
-        const gallerySection = document.getElementById('gallerySection');
-        const galleryGrid = document.getElementById('galleryGrid');
-        if (savedVideos.length > 0) {
-            gallerySection.style.display = 'block';
-            galleryGrid.innerHTML = savedVideos.map((video, index) => `
-                <div class="gallery-card">
-                    <video controls src="${video.url}"></video>
-                    <div class="prompt-text">💭 ${video.prompt || 'Без промпту'}</div>
-                    <button class="delete-btn" onclick="deleteVideo(${index})">🗑️ Видалити</button>
-                </div>
-            `).reverse().join('');
-        } else {
-            gallerySection.style.display = 'none';
-        }
-    }
-    function saveToGallery(url, prompt) {
-        const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
-        savedVideos.push({ url, prompt });
-        localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
-        loadGallery();
-    }
-    window.deleteVideo = function(index) {
-        const savedVideos = JSON.parse(localStorage.getItem('ai_videos')) || [];
-        savedVideos.splice(savedVideos.length - 1 - index, 1);
-        localStorage.setItem('ai_videos', JSON.stringify(savedVideos));
-        loadGallery();
-    }
-    loadGallery();
-    window.copyLink = function(url) { navigator.clipboard.writeText(url).then(() => alert('✅ Посилання скопійовано!')); }
-
-    // --- ЛОГІКА ГЕНЕРАЦІЇ ---
+    // ЛОГІКА ГЕНЕРАЦІЇ
     document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -229,39 +149,30 @@
         const progressContainer = document.getElementById('progressContainer');
         const btn = document.getElementById('btn');
 
-        // Визначаємо, що відправити: завантажений файл АБО посилання
+        const selectedModel = modelSelect.value;
+        const isImageModel = !['wan', 'hunyuan', 'minimax-text'].includes(selectedModel);
         const finalImageSource = base64Image || imgUrlInput.value;
 
-        if (!finalImageSource) {
-            status.innerText = "❌ Будь ласка, завантажте фото або вставте посилання";
-            return;
+        if (isImageModel && !finalImageSource) {
+            return status.innerText = "❌ Для цієї моделі обов'язково потрібне фото!";
         }
 
         const prompt = document.getElementById('prompt').value;
-        const negPrompt = document.getElementById('negPrompt').value;
-        const guidance = document.getElementById('guidance').value;
-        const steps = document.getElementById('steps').value;
-        const seed = document.getElementById('seed').value;
 
-        status.innerText = "🚀 Відправка фото на сервер...";
-        resultDiv.innerHTML = ""; 
-        btn.disabled = true;
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '15%';
+        status.innerText = "🚀 Відправка запиту на сервер...";
+        resultDiv.innerHTML = ""; btn.disabled = true;
+        progressContainer.style.display = 'block'; progressBar.style.width = '15%';
 
-        let attempts = 0;
-        const MAX_ATTEMPTS = 60;
+        let attempts = 0; const MAX_ATTEMPTS = 60;
         
         try {
             const payload = {
-                image_url: finalImageSource, // Тут тепер може бути і Base64, і URL
-                prompt: prompt,
-                negative_prompt: negPrompt,
-                guidance_scale: guidance,
-                num_inference_steps: steps
+                model_id: selectedModel,
+                prompt: prompt
             };
-            if (seed) payload.seed = seed;
+            if (isImageModel) payload.image_url = finalImageSource;
 
+            // 1. ЗАПУСК
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -271,32 +182,34 @@
             if (!response.ok) throw new Error("Помилка сервера при запуску");
 
             const data = await response.json();
-            const request_id = data.request_id;
+            const { request_id, endpoint } = data; // Отримуємо і ID, і Ендпоінт
             
-            status.innerText = "⏳ Обробка нейромережею...";
+            status.innerText = "⏳ Модель генерує відео...";
 
+            // 2. ОПИТУВАННЯ
             const pollInterval = setInterval(async () => {
                 attempts++;
                 progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100 * 2, 90)}%`;
 
                 if (attempts > MAX_ATTEMPTS) {
-                    clearInterval(pollInterval);
-                    status.innerText = "⏰ Час вичерпано.";
-                    btn.disabled = false;
-                    progressContainer.style.display = 'none';
-                    return;
+                    clearInterval(pollInterval); status.innerText = "⏰ Час вичерпано."; btn.disabled = false; progressContainer.style.display = 'none'; return;
                 }
                 
                 try {
-                    const checkRes = await fetch(`/status/${request_id}`);
+                    // ЗВЕРНИ УВАГУ: Тепер ми відправляємо POST запит на /status з ID та endpoint
+                    const checkRes = await fetch(`/status`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ request_id, endpoint })
+                    });
+                    
                     if (checkRes.status === 200) {
                         const result = await checkRes.json();
                         const finalVideoUrl = result.data?.video?.url || result.video?.url || result.video_url || result.url;
 
                         if (finalVideoUrl) {
                             clearInterval(pollInterval);
-                            progressBar.style.width = '100%';
-                            status.innerText = "✨ Готово!";
+                            progressBar.style.width = '100%'; status.innerText = "✨ Готово!";
                             setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
 
                             resultDiv.innerHTML = `
@@ -304,25 +217,19 @@
                                     <source src="${finalVideoUrl}" type="video/mp4">
                                 </video>
                                 <div class="action-buttons">
-                                    <button class="action-btn" onclick="copyLink('${finalVideoUrl}')">📋 Копіювати лінк</button>
-                                    <a href="${finalVideoUrl}" target="_blank" class="action-btn">⬇️ Відкрити файл</a>
+                                    <a href="${finalVideoUrl}" target="_blank" class="action-btn">⬇️ Завантажити відео</a>
                                 </div>
                             `;
                             btn.disabled = false;
-                            saveToGallery(finalVideoUrl, prompt);
                         }
                     } else if (checkRes.status === 202) {
-                        status.innerText = `⏳ Малюємо кадри...`;
+                        status.innerText = `⏳ Рендеринг кадрів...`;
                     }
-                } catch (pollError) {
-                    console.error("Помилка:", pollError);
-                }
+                } catch (pollError) { console.error("Помилка:", pollError); }
             }, 5000);
 
         } catch (e) {
-            status.innerText = "❌ Помилка: " + e.message;
-            btn.disabled = false;
-            progressContainer.style.display = 'none';
+            status.innerText = "❌ Помилка: " + e.message; btn.disabled = false; progressContainer.style.display = 'none';
         }
     };
 </script>
