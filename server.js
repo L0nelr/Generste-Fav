@@ -1,40 +1,47 @@
+// === БЛОК 1: ІМПОРТИ ТА НАЛАШТУВАННЯ ===
 const express = require('express');
 const { fal } = require("@fal-ai/client");
 const fs = require('fs');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static');
-// Бібліотека node-fetch більше не потрібна, Node 22 має нативний fetch!
 
+// Вказуємо FFmpeg, де лежить його ядро
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 const app = express();
+// Збільшуємо ліміти для передачі великих фотографій у Base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Створюємо папку для збереження готових відео, якщо її немає
 const videosDir = path.join(__dirname, 'public', 'videos');
 if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 
+// Відкриваємо публічний доступ до папки public (щоб сайт міг завантажити відео)
 app.use(express.static('public'));
 
-// БАЗОВІ ендпоінти, щоб уникнути помилок шляху
+// === БЛОК 2: СЛОВНИК МОДЕЛЕЙ (МАРШРУТИЗАТОР) ===
+// ВИПРАВЛЕНО: Додано /image-to-video до кожного шляху, щоб уникнути помилки Bad Request
 const MODEL_ENDPOINTS = {
-    "kling": "fal-ai/kling-video/v1/pro", 
-    "luma": "fal-ai/luma-dream-machine",
-    "minimax-img": "fal-ai/minimax/video"
+    "kling": "fal-ai/kling-video/v1/pro/image-to-video", 
+    "luma": "fal-ai/luma-dream-machine/image-to-video",
+    "minimax-img": "fal-ai/minimax/video/image-to-video"
 };
 
+// Тут сервер "пам'ятає", на якій стадії знаходиться кожне відео
 const jobStates = {};
 
+// === БЛОК 3: ДВИГУН УНІКАЛІЗАЦІЇ (FFMPEG) ===
 function getRandom(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-// Функція унікалізації
 async function randomizeVideo(inputPath, platform) {
     const outputFileName = `${platform}_${Date.now()}_${Math.floor(Math.random() * 1000)}.mp4`;
     const outputPath = path.join(videosDir, outputFileName);
 
+    // Генеруємо випадкові параметри для обману алгоритмів
     const brightness = getRandom(-0.02, 0.02).toFixed(3);
     const contrast = getRandom(0.98, 1.02).toFixed(3);
     const saturation = getRandom(0.98, 1.02).toFixed(3);
@@ -49,9 +56,9 @@ async function randomizeVideo(inputPath, platform) {
                 `crop=iw-${cropPixels}:ih-${cropPixels}`
             ])
             .outputOptions([
-                `-b:v ${bitrate}k`,
-                `-metadata creation_time="${randomDate}"`,
-                `-map_metadata -1` 
+                `-b:v ${bitrate}k`, // Випадковий бітрейт
+                `-metadata creation_time="${randomDate}"`, // Випадковий час створення
+                `-map_metadata -1` // Видалення старого цифрового сліду
             ])
             .save(outputPath)
             .on('end', () => resolve(`/videos/${outputFileName}`))
@@ -59,13 +66,15 @@ async function randomizeVideo(inputPath, platform) {
     });
 }
 
+// === БЛОК 4: API ЗАПУСКУ (/start) ===
 app.post('/start', async (req, res) => {
     try {
         const { image_url, prompt, model_id } = req.body;
         const endpoint = MODEL_ENDPOINTS[model_id] || MODEL_ENDPOINTS["kling"];
 
-        if (!image_url) return res.status(400).json({ error: "Потрібне зображення" });
+        if (!image_url) return res.status(400).json({ error: "Потрібне зображення для стартового кадру" });
 
+        // Відправляємо фото та промпт у Fal.ai
         const { request_id } = await fal.queue.submit(endpoint, {
             input: { prompt: prompt || "cinematic scene", image_url: image_url }
         });
@@ -78,38 +87,39 @@ app.post('/start', async (req, res) => {
     }
 });
 
+// === БЛОК 5: API СТАТУСУ ТА ОБРОБКИ (/status) ===
 app.post('/status', async (req, res) => {
     try {
         const { request_id, endpoint } = req.body;
-        if (!request_id || !endpoint) return res.status(400).json({ error: "Бракує даних" });
+        if (!request_id || !endpoint) return res.status(400).json({ error: "Бракує даних для перевірки" });
 
         const job = jobStates[request_id];
         
-        // Перехоплення помилок унікалізації
+        // 1. Перевіряємо, чи немає помилок унікалізації
         if (job?.status === 'error') {
             return res.status(500).json({ error: `Помилка унікалізації FFmpeg: ${job.errorMsg}` });
         }
-
+        // 2. Якщо вже все готово - віддаємо 3 посилання
         if (job?.status === 'done') {
             return res.json({ status: 'COMPLETED', videos: job.videos });
         }
-
+        // 3. Якщо сервер зараз монтує відео - просимо почекати
         if (job?.status === 'processing_ffmpeg') {
             return res.status(202).json({ status: "Унікалізація (FFmpeg)..." });
         }
 
+        // 4. Запитуємо статус у Fal.ai
         const statusUpdate = await fal.queue.status(endpoint, { requestId: request_id });
 
-        // Захист від втрати стану (job?)
         if (statusUpdate.status === "COMPLETED" && job?.status === 'generating') {
             const result = await fal.queue.result(endpoint, { requestId: request_id });
             const sourceVideoUrl = result.data?.video?.url || result.video?.url || result.url;
 
             jobStates[request_id].status = 'processing_ffmpeg';
             
+            // Асинхронно завантажуємо і ріжемо на 3 унікальні копії
             setTimeout(async () => {
                 try {
-                    // Використовуємо нативний fetch замість node-fetch
                     const response = await fetch(sourceVideoUrl);
                     const arrayBuffer = await response.arrayBuffer();
                     const buffer = Buffer.from(arrayBuffer);
@@ -117,13 +127,14 @@ app.post('/status', async (req, res) => {
                     const tempInputPath = path.join(videosDir, `temp_${request_id}.mp4`);
                     fs.writeFileSync(tempInputPath, buffer);
 
+                    // Паралельно робимо 3 версії
                     const [tiktokUrl, instaUrl, ytUrl] = await Promise.all([
                         randomizeVideo(tempInputPath, 'tiktok'),
                         randomizeVideo(tempInputPath, 'insta'),
                         randomizeVideo(tempInputPath, 'youtube')
                     ]);
 
-                    fs.unlinkSync(tempInputPath);
+                    fs.unlinkSync(tempInputPath); // Видаляємо оригінал
 
                     jobStates[request_id] = { 
                         status: 'done', 
@@ -145,5 +156,7 @@ app.post('/status', async (req, res) => {
     }
 });
 
+// === ЗАПУСК СЕРВЕРА ===
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Сервер з FFmpeg запущено на порту ${PORT}`));
+

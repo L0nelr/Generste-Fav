@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Video Generator Pro | 3x Unique</title>
     <style>
-        /* Глобальне правило, щоб ніякі блоки більше не вилазили за краї */
+        /* Глобальний фікс геометрії блоків */
         * { box-sizing: border-box; }
 
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; }
@@ -19,7 +19,6 @@
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 14px; }
         input[type="text"], select { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; font-size: 15px; outline: none; }
         
-        /* Виправлена пунктирна зона */
         .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; margin-bottom: 1rem; position: relative; transition: all 0.2s; }
         .drop-zone:hover, .drop-zone.dragover { background: #e6f0ff; }
         .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; object-fit: contain; }
@@ -39,7 +38,7 @@
         .video-card { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px; text-align: center; }
         .video-card h3 { font-size: 13px; margin: 0 0 10px 0; color: #333; }
         .video-card video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
-        .action-btn { display: inline-block; width: 100%; padding: 8px; border: 1px solid #0052cc; background: white; border-radius: 6px; font-weight: 600; color: #0052cc; cursor: pointer; text-decoration: none; font-size: 12px; box-sizing: border-box;}
+        .action-btn { display: inline-block; width: 100%; padding: 8px; border: 1px solid #0052cc; background: white; border-radius: 6px; font-weight: 600; color: #0052cc; cursor: pointer; text-decoration: none; font-size: 12px;}
         
         .gallery-overlay { display: none; background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.1); width: 100%; max-width: 800px; margin-top: 2rem; }
         .gallery-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
@@ -52,16 +51,16 @@
         <button class="gallery-btn" id="toggleGallery">📂 Мої проекти</button>
     </div>
     
-    <h1>Генератор відео (Унікалізація)</h1>
+    <h1>Генератор відео (3x Унікалізація)</h1>
 
-    <label>🤖 Модель для генерації</label>
+    <label for="modelSelect">🤖 Модель для генерації</label>
     <select id="modelSelect">
         <option value="kling">Kling Video (Абсурд / CCTV)</option>
         <option value="luma">Luma Dream Machine (Мікровсесвіти / Діорами)</option>
         <option value="minimax-img">Veo 3 / MiniMax (Сюрреалістичний ASMR)</option>
     </select>
 
-    <label>Зображення (Стартовий кадр)</label>
+    <label for="imgUrl">Зображення (Стартовий кадр)</label>
     <div class="drop-zone" id="dropZone">
         <span class="drop-text" id="dropText">📂 Перетягніть фото або натисніть</span>
         <img id="imagePreview" src="" alt="Preview">
@@ -72,7 +71,7 @@
     <input type="text" id="imgUrl" placeholder="Вставте пряме посилання (https://...)">
 
     <label for="prompt">Що має відбуватися? (Промпт)</label>
-    <input type="text" id="prompt" placeholder="Наприклад: zooming into a micro city">
+    <input type="text" id="prompt" placeholder="Наприклад: Stop-motion animation, slow camera push-in">
 
     <button id="btn" class="primary-btn">✨ Згенерувати 3 унікальні відео</button>
 
@@ -88,7 +87,7 @@
 </div>
 
 <script>
-    // --- Обробка файлів та посилань ---
+    // 1. ЛОГІКА ФОТО (Drag & Drop + URL)
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
@@ -105,7 +104,6 @@
     });
     fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
-    // Якщо користувач вводить лінк - скидаємо файл
     imgUrlInput.addEventListener('input', () => {
         if (imgUrlInput.value.trim() !== "") {
             base64Image = null;
@@ -123,12 +121,12 @@
             imagePreview.src = base64Image; 
             imagePreview.style.display = 'block'; 
             dropText.style.display = 'none';
-            imgUrlInput.value = ""; // Скидаємо лінк, якщо завантажили файл
+            imgUrlInput.value = ""; 
         };
         reader.readAsDataURL(file);
     }
 
-    // --- Галерея ---
+    // 2. ЛОГІКА ГАЛЕРЕЇ
     const toggleGallery = document.getElementById('toggleGallery');
     const galleryOverlay = document.getElementById('galleryOverlay');
     
@@ -155,15 +153,13 @@
         localStorage.setItem('ai_videos_v2', JSON.stringify(saved));
     }
 
-    // --- Генерація ---
-    document.getElementById('btn').onclick = async () => {
+document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
         const progressBar = document.getElementById('progressBar');
         const progressContainer = document.getElementById('progressContainer');
         const btn = document.getElementById('btn');
 
-        // Визначаємо джерело фото (файл або лінк)
         const finalImageSource = base64Image || imgUrlInput.value.trim();
 
         if (!finalImageSource) return status.innerText = "❌ Додайте фото або вставте посилання!";
@@ -175,9 +171,10 @@
         resultDiv.innerHTML = ""; btn.disabled = true;
         progressContainer.style.display = 'block'; progressBar.style.width = '10%';
 
-        let attempts = 0; const MAX_ATTEMPTS = 120;
+        let attempts = 0; const MAX_ATTEMPTS = 120; // Опитування до 10 хвилин
         
         try {
+            // Крок 1: Відправляємо запит
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -187,6 +184,7 @@
             if (!response.ok) throw new Error("Помилка підключення до сервера");
             const { request_id, endpoint } = await response.json();
             
+            // Крок 2: Чекаємо результат (Polling)
             const pollInterval = setInterval(async () => {
                 attempts++;
                 progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100, 95)}%`;
@@ -205,6 +203,7 @@
                     const data = await checkRes.json();
 
                     if (checkRes.status === 200 && data.status === 'COMPLETED') {
+                        // УСПІХ
                         clearInterval(pollInterval);
                         progressBar.style.width = '100%'; status.innerText = "✨ Всі 3 версії відео готові!";
                         setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
@@ -231,14 +230,16 @@
                         saveToGallery(prompt, data.videos);
                         btn.disabled = false;
                     } else if (checkRes.status === 202) {
+                        // ПРОЦЕС
                         status.innerText = `⏳ ${data.status}`;
                     } else if (checkRes.status === 500) {
+                        // ПОМИЛКА
                          clearInterval(pollInterval); 
                          status.innerText = `❌ Помилка: ${data.error || 'Невідомий збій на сервері'}`; 
                          btn.disabled = false;
                          progressContainer.style.display = 'none';
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error("Помилка опитування:", e); }
             }, 5000);
 
         } catch (e) {
@@ -246,6 +247,5 @@
         }
     };
 </script>
-
 </body>
-</html>
+</html>    
