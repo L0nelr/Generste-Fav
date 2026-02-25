@@ -26,7 +26,7 @@ const MODEL_ENDPOINTS = {
     // Вказуємо конкретні версії моделей, щоб уникнути помилок deprecated
     "kling": "fal-ai/kling-video/v1.5/pro/image-to-video", // Оновлено до 1.5 для кращої стабільності
     "luma": "fal-ai/luma-dream-machine/ray-2",             // Перехід на актуальну архітектуру Ray 2
-    "minimax-img": "fal-ai/minimax/video/image-to-video"
+    "minimax-img": "fal-ai/minimax/video-01/image-to-video"
 };
 // Тут сервер "пам'ятає", на якій стадії знаходиться кожне відео
 const jobStates = {};
