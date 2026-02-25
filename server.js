@@ -22,12 +22,11 @@ if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 app.use(express.static('public'));
 
 // === БЛОК 2: СЛОВНИК МОДЕЛЕЙ (МАРШРУТИЗАТОР) ===
-// ВИПРАВЛЕНО: Видалено застарілі приставки /image-to-video. 
-// Тепер Fal.ai сам розуміє, що робити, якщо ми передаємо параметр image_url
 const MODEL_ENDPOINTS = {
-    "kling": "fal-ai/kling-video/v1/pro", 
-    "luma": "fal-ai/luma-dream-machine",
-    "minimax-img": "fal-ai/minimax/video"
+    // Вказуємо конкретні версії моделей, щоб уникнути помилок deprecated
+    "kling": "fal-ai/kling-video/v1.5/pro/image-to-video", // Оновлено до 1.5 для кращої стабільності
+    "luma": "fal-ai/luma-dream-machine/ray-2",             // Перехід на актуальну архітектуру Ray 2
+    "minimax-img": "fal-ai/minimax/video/image-to-video"
 };
 // Тут сервер "пам'ятає", на якій стадії знаходиться кожне відео
 const jobStates = {};
