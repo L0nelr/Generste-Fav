@@ -136,72 +136,58 @@ app.post('/start', async (req, res) => {
     }
 });
 
-// === БЛОК 5: API СТАТУСУ ТА ОБРОБКИ (/status) ===
+// === БЛОК 5: API СТАТУСУ (/status) ===
 app.post('/status', async (req, res) => {
     try {
         const { request_id, endpoint } = req.body;
-        if (!request_id || !endpoint) return res.status(400).json({ error: "Бракує даних для перевірки" });
+        if (!request_id || !endpoint) return res.status(400).json({ error: "Бракує даних" });
 
-        const job = jobStates[request_id];
-        
-        // 1. Перевіряємо, чи немає помилок унікалізації
-        if (job?.status === 'error') {
-            return res.status(500).json({ error: `Помилка унікалізації FFmpeg: ${job.errorMsg}` });
-        }
-        // 2. Якщо вже все готово - віддаємо 3 посилання
-        if (job?.status === 'done') {
-            return res.json({ status: 'COMPLETED', videos: job.videos });
-        }
-        // 3. Якщо сервер зараз монтує відео - просимо почекати
-        if (job?.status === 'processing_ffmpeg') {
-            return res.status(202).json({ status: "Унікалізація (FFmpeg)..." });
-        }
-
-        // 4. Запитуємо статус у Fal.ai
         const statusUpdate = await fal.queue.status(endpoint, { requestId: request_id });
 
-        if (statusUpdate.status === "COMPLETED" && job?.status === 'generating') {
+        if (statusUpdate.status === "COMPLETED") {
             const result = await fal.queue.result(endpoint, { requestId: request_id });
             const sourceVideoUrl = result.data?.video?.url || result.video?.url || result.url;
-
-            jobStates[request_id].status = 'processing_ffmpeg';
             
-            // Асинхронно завантажуємо і ріжемо на 3 унікальні копії
-            setTimeout(async () => {
-                try {
-                    const response = await fetch(sourceVideoUrl);
-                    const arrayBuffer = await response.arrayBuffer();
-                    const buffer = Buffer.from(arrayBuffer);
-                    
-                    const tempInputPath = path.join(videosDir, `temp_${request_id}.mp4`);
-                    fs.writeFileSync(tempInputPath, buffer);
-
-                    // Паралельно робимо 3 версії
-                    const [tiktokUrl, instaUrl, ytUrl] = await Promise.all([
-                        randomizeVideo(tempInputPath, 'tiktok'),
-                        randomizeVideo(tempInputPath, 'insta'),
-                        randomizeVideo(tempInputPath, 'youtube')
-                    ]);
-
-                    fs.unlinkSync(tempInputPath); // Видаляємо оригінал
-
-                    jobStates[request_id] = { 
-                        status: 'done', 
-                        videos: { tiktok: tiktokUrl, insta: instaUrl, youtube: ytUrl } 
-                    };
-                } catch (err) {
-                    console.error("❌ FFmpeg помилка:", err);
-                    jobStates[request_id] = { status: 'error', errorMsg: err.message };
-                }
-            }, 0);
-
-            return res.status(202).json({ status: "Завантаження та запуск FFmpeg..." });
+            // Повертаємо ОДНЕ готове відео
+            return res.json({ status: 'COMPLETED', video_url: sourceVideoUrl });
         }
         
         res.status(202).json({ status: statusUpdate.status });
     } catch (error) {
         console.error(`❌ Помилка Status:`, error.message);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// === БЛОК 6: РУЧНА УНІКАЛІЗАЦІЯ (/uniqueize) ===
+app.post('/uniqueize', async (req, res) => {
+    try {
+        const { video_url } = req.body;
+        if (!video_url) return res.status(400).json({ error: "Немає посилання на відео" });
+
+        console.log("✂️ Запуск ручної унікалізації FFmpeg...");
+
+        // Завантажуємо оригінал
+        const response = await fetch(video_url);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        const tempInputPath = path.join(videosDir, `temp_manual_${Date.now()}.mp4`);
+        fs.writeFileSync(tempInputPath, buffer);
+
+        // Робимо 3 версії паралельно
+        const [tiktokUrl, instaUrl, ytUrl] = await Promise.all([
+            randomizeVideo(tempInputPath, 'tiktok'),
+            randomizeVideo(tempInputPath, 'insta'),
+            randomizeVideo(tempInputPath, 'youtube')
+        ]);
+
+        fs.unlinkSync(tempInputPath); // Видаляємо оригінал з сервера
+
+        res.json({ tiktok: tiktokUrl, insta: instaUrl, youtube: ytUrl });
+    } catch (error) {
+        console.error("❌ Помилка FFmpeg:", error.message);
+        res.status(500).json({ error: "Помилка при створенні копій: " + error.message });
     }
 });
 

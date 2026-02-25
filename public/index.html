@@ -170,7 +170,7 @@
         localStorage.setItem('ai_videos_v2', JSON.stringify(saved));
     }
 
-    // 3. ЛОГІКА ЗАПУСКУ ТА ОПИТУВАННЯ
+// 3. ЛОГІКА ЗАПУСКУ, ОПИТУВАННЯ ТА УНІКАЛІЗАЦІЇ
     document.getElementById('btn').onclick = async () => {
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -179,46 +179,35 @@
         const btn = document.getElementById('btn');
 
         const finalImageSource = base64Image || imgUrlInput.value.trim();
-
         if (!finalImageSource) return status.innerText = "❌ Додайте фото або вставте посилання!";
         
         const prompt = document.getElementById('prompt').value;
         const modelSelect = document.getElementById('modelSelect').value;
-        
-        // Отримуємо значення з нових налаштувань
         const aspect_ratio = document.getElementById('aspectRatio').value;
         const loop_video = document.getElementById('loopVideo').checked;
 
-        status.innerText = "🚀 Запуск... (генерація та унікалізація займуть час)";
+        status.innerText = "🚀 Генерація відео...";
         resultDiv.innerHTML = ""; btn.disabled = true;
         progressContainer.style.display = 'block'; progressBar.style.width = '10%';
 
-        let attempts = 0; const MAX_ATTEMPTS = 120; // Опитування до 10 хвилин
+        let attempts = 0; const MAX_ATTEMPTS = 120;
         
         try {
-            // Крок 1: Відправляємо запит з новими параметрами
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    image_url: finalImageSource, 
-                    prompt: prompt, 
-                    model_id: modelSelect,
-                    aspect_ratio: aspect_ratio,
-                    loop_video: loop_video
-                })
+                body: JSON.stringify({ image_url: finalImageSource, prompt, model_id: modelSelect, aspect_ratio, loop_video })
             });
 
             if (!response.ok) throw new Error("Помилка підключення до сервера");
             const { request_id, endpoint } = await response.json();
             
-            // Крок 2: Чекаємо результат (Polling)
             const pollInterval = setInterval(async () => {
                 attempts++;
                 progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100, 95)}%`;
 
                 if (attempts > MAX_ATTEMPTS) {
-                    clearInterval(pollInterval); status.innerText = "⏰ Таймаут (Занадто довго)"; btn.disabled = false; return;
+                    clearInterval(pollInterval); status.innerText = "⏰ Таймаут генерації"; btn.disabled = false; return;
                 }
                 
                 try {
@@ -231,37 +220,75 @@
                     const data = await checkRes.json();
 
                     if (checkRes.status === 200 && data.status === 'COMPLETED') {
-                        // УСПІХ
+                        // === ФАЗА 1: ВІДЕО ЗГЕНЕРОВАНО ===
                         clearInterval(pollInterval);
-                        progressBar.style.width = '100%'; status.innerText = "✨ Всі 3 версії відео готові!";
+                        progressBar.style.width = '100%'; 
+                        status.innerText = "✨ Базове відео готове! Перевірте результат.";
                         setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
+                        btn.disabled = false;
 
-                        const { tiktok, insta, youtube } = data.videos;
-
+                        // Показуємо ОДНЕ відео і кнопку унікалізації
                         resultDiv.innerHTML = `
-                            <div class="video-card">
-                                <h3>🎵 TikTok</h3>
-                                <video controls autoplay loop muted><source src="${tiktok}" type="video/mp4"></video>
-                                <a href="${tiktok}" download class="action-btn">⬇️ Завантажити</a>
-                            </div>
-                            <div class="video-card">
-                                <h3>📸 Instagram</h3>
-                                <video controls autoplay loop muted><source src="${insta}" type="video/mp4"></video>
-                                <a href="${insta}" download class="action-btn">⬇️ Завантажити</a>
-                            </div>
-                            <div class="video-card">
-                                <h3>▶️ YouTube Shorts</h3>
-                                <video controls autoplay loop muted><source src="${youtube}" type="video/mp4"></video>
-                                <a href="${youtube}" download class="action-btn">⬇️ Завантажити</a>
+                            <div style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center;">
+                                <h3>Базовий результат</h3>
+                                <video controls autoplay loop style="width: 100%; border-radius: 12px; margin-bottom: 15px;">
+                                    <source src="${data.video_url}" type="video/mp4">
+                                </video>
+                                <button id="btnUniqueize" class="primary-btn" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                                    ✂️ Унікалізувати для 3 соцмереж
+                                </button>
+                                <p id="uniqueStatus" style="font-size: 13px; color: #666; margin-top: 10px;"></p>
                             </div>
                         `;
-                        saveToGallery(prompt, data.videos);
-                        btn.disabled = false;
+
+                        // === ФАЗА 2: ЛОГІКА КНОПКИ УНІКАЛІЗАЦІЇ ===
+                        document.getElementById('btnUniqueize').onclick = async function() {
+                            const uBtn = this;
+                            const uStatus = document.getElementById('uniqueStatus');
+                            uBtn.disabled = true;
+                            uStatus.innerText = "⏳ Обробка FFmpeg... (може зайняти хвилину)";
+
+                            try {
+                                const uRes = await fetch('/uniqueize', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ video_url: data.video_url })
+                                });
+
+                                if (!uRes.ok) throw new Error("Помилка FFmpeg");
+                                const uData = await uRes.json();
+
+                                uStatus.innerText = "✅ Готово!";
+                                
+                                // Виводимо 3 плеєри
+                                resultDiv.innerHTML = `
+                                    <div class="video-grid">
+                                        <div class="video-card">
+                                            <h3>🎵 TikTok</h3>
+                                            <video controls autoplay loop muted><source src="${uData.tiktok}" type="video/mp4"></video>
+                                            <a href="${uData.tiktok}" download class="action-btn">⬇️ Завантажити</a>
+                                        </div>
+                                        <div class="video-card">
+                                            <h3>📸 Instagram</h3>
+                                            <video controls autoplay loop muted><source src="${uData.insta}" type="video/mp4"></video>
+                                            <a href="${uData.insta}" download class="action-btn">⬇️ Завантажити</a>
+                                        </div>
+                                        <div class="video-card">
+                                            <h3>▶️ YouTube Shorts</h3>
+                                            <video controls autoplay loop muted><source src="${uData.youtube}" type="video/mp4"></video>
+                                            <a href="${uData.youtube}" download class="action-btn">⬇️ Завантажити</a>
+                                        </div>
+                                    </div>
+                                `;
+                                saveToGallery(prompt, uData);
+                            } catch (err) {
+                                uStatus.innerText = "❌ Помилка: " + err.message;
+                                uBtn.disabled = false;
+                            }
+                        };
                     } else if (checkRes.status === 202) {
-                        // ПРОЦЕС
                         status.innerText = `⏳ ${data.status}`;
                     } else if (checkRes.status === 500) {
-                        // ПОМИЛКА
                          clearInterval(pollInterval); 
                          status.innerText = `❌ Помилка: ${data.error || 'Невідомий збій на сервері'}`; 
                          btn.disabled = false;
@@ -274,6 +301,3 @@
             status.innerText = "❌ Помилка: " + e.message; btn.disabled = false; progressContainer.style.display = 'none';
         }
     };
-</script>
-</body>
-</html>
