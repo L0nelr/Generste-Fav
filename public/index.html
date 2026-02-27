@@ -145,10 +145,22 @@
     function loadGallery() {
         const saved = JSON.parse(localStorage.getItem('ai_videos_v2')) || [];
         const grid = document.getElementById('galleryGrid');
+        
+        if (saved.length === 0) {
+            grid.innerHTML = "<p style='grid-column: 1/-1; text-align: center; color: #666;'>Галерея порожня</p>";
+            return;
+        }
+
         grid.innerHTML = saved.map(item => `
-            <div class="video-card">
-                <h3>${item.prompt || 'Без промпту'}</h3>
-                <video controls src="${item.urls.tiktok}"></video>
+            <div class="video-card" style="display: flex; flex-direction: column; gap: 10px;">
+                <details style="text-align: left; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e1e4e8; font-size: 12px; cursor: pointer;">
+                    <summary style="font-weight: bold; color: #0052cc; outline: none;">📝 Показати промпт</summary>
+                    <p style="margin-top: 8px; color: #444; line-height: 1.4;">${item.prompt || 'Без промпту'}</p>
+                </details>
+                
+                <video controls preload="metadata" style="width: 100%; border-radius: 8px; background: #1a1a1a; min-height: 250px;">
+                    <source src="${item.urls ? item.urls.tiktok : ''}" type="video/mp4">
+                </video>
             </div>
         `).reverse().join('');
     }
