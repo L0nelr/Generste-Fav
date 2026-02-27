@@ -24,9 +24,9 @@ app.use(express.static('public'));
 // === БЛОК 2: СЛОВНИК МОДЕЛЕЙ (МАРШРУТИЗАТОР) ===
 const MODEL_ENDPOINTS = {
     // Вказуємо конкретні версії моделей, щоб уникнути помилок deprecated
-    "kling": "fal-ai/kling-video/v1.5/pro/image-to-video", // Оновлено до 1.5 для кращої стабільності
-    "luma": "fal-ai/luma-dream-machine/ray-2",             // Перехід на актуальну архітектуру Ray 2
-    "minimax-img": "fal-ai/minimax/video-01/image-to-video"
+    "kling": "fal-ai/kling-video/v1.5/pro/image-to-video", 
+    "luma": "fal-ai/luma-dream-machine/ray-2",             
+    "minimax": "fal-ai/minimax/video-01/image-to-video" // ВИПРАВЛЕНО: прибрали "-img", тепер збігається з HTML
 };
 // Тут сервер "пам'ятає", на якій стадії знаходиться кожне відео
 const jobStates = {};
