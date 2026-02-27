@@ -5,41 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Video Generator Pro | 3x Unique</title>
     <style>
-        /* Глобальний фікс геометрії блоків */
         * { box-sizing: border-box; }
-
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 1rem; }
         .container { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); width: 100%; max-width: 600px; margin-bottom: 2rem; position: relative; }
         h1 { font-size: 26px; color: #1a1a1a; margin-top: 0; margin-bottom: 1.5rem; text-align: center; }
-        
         .header-actions { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
         .gallery-btn { background: #e6f0ff; color: #0052cc; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .gallery-btn:hover { background: #cce0ff; }
-
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 14px; }
         input[type="text"], select { width: 100%; padding: 14px; margin-bottom: 1rem; border: 1.5px solid #e1e4e8; border-radius: 10px; font-size: 15px; outline: none; }
-        
         .drop-zone { width: 100%; border: 2px dashed #0052cc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f8faff; color: #0052cc; margin-bottom: 1rem; position: relative; transition: all 0.2s; }
         .drop-zone:hover, .drop-zone.dragover { background: #e6f0ff; }
         .drop-zone img { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin: 0 auto; object-fit: contain; }
         .drop-text { pointer-events: none; font-weight: 500;}
-
         .divider { text-align: center; margin: 5px 0 15px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-
         button.primary-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #0052cc 0%, #0042a3 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
         button.primary-btn:active { transform: scale(0.98); }
         button.primary-btn:disabled { background: #ccc; cursor: not-allowed; }
-
         .progress-container { width: 100%; height: 8px; background-color: #e1e4e8; border-radius: 4px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { height: 100%; width: 0%; background-color: #0052cc; transition: width 0.4s ease; }
         #status { margin-top: 1rem; font-size: 14px; color: #666; text-align: center; font-weight: 500; }
-        
         .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 1.5rem; }
         .video-card { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px; text-align: center; }
         .video-card h3 { font-size: 13px; margin: 0 0 10px 0; color: #333; }
         .video-card video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
         .action-btn { display: inline-block; width: 100%; padding: 8px; border: 1px solid #0052cc; background: white; border-radius: 6px; font-weight: 600; color: #0052cc; cursor: pointer; text-decoration: none; font-size: 12px;}
-        
         .gallery-overlay { display: none; background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.1); width: 100%; max-width: 800px; margin-top: 2rem; }
         .gallery-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     </style>
@@ -51,14 +41,14 @@
         <button class="gallery-btn" id="toggleGallery">📂 Мої проекти</button>
     </div>
     
-    <h1>Генератор відео (3x Унікалізація)</h1>
+    <h1>Генератор відео (Pro)</h1>
 
     <label for="modelSelect">🤖 Модель для генерації</label>
-<select id="modelSelect">
-    <option value="kling">Kling Video (Абсурд / CCTV)</option>
-    <option value="luma">Luma Dream Machine (Мікровсесвіти / Діорами)</option>
-    <option value="minimax">MiniMax Hailuo (Vertical Shorts / ASMR)</option>
-</select>
+    <select id="modelSelect">
+        <option value="kling">Kling Video (Абсурд / Люди / GRWM)</option>
+        <option value="luma">Luma Dream Machine (Мікровсесвіти / Діорами)</option>
+        <option value="minimax">MiniMax Hailuo (Vertical Shorts / ASMR)</option>
+    </select>
 
     <label for="imgUrl">Зображення (Стартовий кадр)</label>
     <div class="drop-zone" id="dropZone">
@@ -71,7 +61,7 @@
     <input type="text" id="imgUrl" placeholder="Вставте пряме посилання (https://...)">
 
     <label for="prompt">Що має відбуватися? (Промпт)</label>
-    <input type="text" id="prompt" placeholder="Наприклад: Stop-motion animation, slow camera push-in">
+    <input type="text" id="prompt" placeholder="Вставте деталізований промпт...">
 
     <div style="display: flex; gap: 15px; margin-bottom: 1.5rem; background: #f8faff; padding: 15px; border-radius: 10px; border: 1px solid #e1e4e8;">
         <div style="flex: 1;">
@@ -85,7 +75,7 @@
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; margin-top: 15px;">
                 <input type="checkbox" id="loopVideo" style="width: 20px; height: 20px; cursor: pointer;">
-                <span>🔄 Безшовне зациклення (Loop)</span>
+                <span>🔄 Зациклення (Тільки Luma)</span>
             </label>
         </div>
     </div>
@@ -104,7 +94,9 @@
 </div>
 
 <script>
-    // 1. ЛОГІКА ФОТО (Drag & Drop + URL)
+    console.log("Скрипт успішно завантажено!");
+
+    // 1. ЛОГІКА ФОТО 
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
@@ -123,10 +115,7 @@
 
     imgUrlInput.addEventListener('input', () => {
         if (imgUrlInput.value.trim() !== "") {
-            base64Image = null;
-            imagePreview.style.display = 'none';
-            dropText.style.display = 'block';
-            fileInput.value = "";
+            base64Image = null; imagePreview.style.display = 'none'; dropText.style.display = 'block'; fileInput.value = "";
         }
     });
 
@@ -170,8 +159,9 @@
         localStorage.setItem('ai_videos_v2', JSON.stringify(saved));
     }
 
-// 3. ЛОГІКА ЗАПУСКУ, ОПИТУВАННЯ ТА УНІКАЛІЗАЦІЇ
+    // 3. ЛОГІКА ЗАПУСКУ
     document.getElementById('btn').onclick = async () => {
+        console.log("Кнопку натиснуто!");
         const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
         const progressBar = document.getElementById('progressBar');
@@ -179,35 +169,49 @@
         const btn = document.getElementById('btn');
 
         const finalImageSource = base64Image || imgUrlInput.value.trim();
-        if (!finalImageSource) return status.innerText = "❌ Додайте фото або вставте посилання!";
+        
+        if (!finalImageSource) {
+            alert("❌ Спочатку завантажте фото або вставте посилання!");
+            status.innerText = "❌ Додайте фото!";
+            return;
+        }
         
         const prompt = document.getElementById('prompt').value;
         const modelSelect = document.getElementById('modelSelect').value;
         const aspect_ratio = document.getElementById('aspectRatio').value;
         const loop_video = document.getElementById('loopVideo').checked;
 
-        status.innerText = "🚀 Генерація відео...";
-        resultDiv.innerHTML = ""; btn.disabled = true;
-        progressContainer.style.display = 'block'; progressBar.style.width = '10%';
+        status.innerText = "⏳ Крок 1: Нейромережа створює відео...";
+        resultDiv.innerHTML = ""; 
+        btn.disabled = true;
+        progressContainer.style.display = 'block'; 
+        progressBar.style.width = '10%';
 
-        let attempts = 0; const MAX_ATTEMPTS = 120;
+        let attempts = 0; 
+        const MAX_ATTEMPTS = 120;
         
         try {
+            console.log("Відправка запиту на сервер...");
             const response = await fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_url: finalImageSource, prompt, model_id: modelSelect, aspect_ratio, loop_video })
             });
 
-            if (!response.ok) throw new Error("Помилка підключення до сервера");
+            if (!response.ok) throw new Error("Помилка підключення до сервера (Можливо, сервер Railway 'спить')");
             const { request_id, endpoint } = await response.json();
+            
+            console.log("Запит прийнято! Очікуємо результат...");
             
             const pollInterval = setInterval(async () => {
                 attempts++;
                 progressBar.style.width = `${Math.min((attempts / MAX_ATTEMPTS) * 100, 95)}%`;
 
                 if (attempts > MAX_ATTEMPTS) {
-                    clearInterval(pollInterval); status.innerText = "⏰ Таймаут генерації"; btn.disabled = false; return;
+                    clearInterval(pollInterval); 
+                    status.innerText = "⏰ Таймаут генерації. Перевірте Fal.ai панель."; 
+                    btn.disabled = false; 
+                    return;
                 }
                 
                 try {
@@ -220,33 +224,31 @@
                     const data = await checkRes.json();
 
                     if (checkRes.status === 200 && data.status === 'COMPLETED') {
-                        // === ФАЗА 1: ВІДЕО ЗГЕНЕРОВАНО ===
                         clearInterval(pollInterval);
                         progressBar.style.width = '100%'; 
-                        status.innerText = "✨ Базове відео готове! Перевірте результат.";
+                        status.innerText = "✅ Базове відео готове! Тепер зробіть його унікальним.";
                         setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
                         btn.disabled = false;
 
-                        // Показуємо ОДНЕ відео і кнопку унікалізації
                         resultDiv.innerHTML = `
-                            <div style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center;">
-                                <h3>Базовий результат</h3>
-                                <video controls autoplay loop style="width: 100%; border-radius: 12px; margin-bottom: 15px;">
+                            <div style="grid-column: 1 / -1; background: #fff; padding: 20px; border-radius: 15px; border: 2px solid #e1e4e8; text-align: center;">
+                                <h3 style="margin-top:0">🎬 Результат нейромережі (Original)</h3>
+                                <video controls autoplay loop style="width: 100%; max-width: 350px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                                     <source src="${data.video_url}" type="video/mp4">
                                 </video>
-                                <button id="btnUniqueize" class="primary-btn" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
-                                    ✂️ Унікалізувати для 3 соцмереж
+                                <br>
+                                <button id="btnUniqueize" class="primary-btn" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%); max-width: 400px;">
+                                    ✂️ КРОК 2: Унікалізувати (TikTok/Insta/YT)
                                 </button>
-                                <p id="uniqueStatus" style="font-size: 13px; color: #666; margin-top: 10px;"></p>
+                                <p id="uniqueStatus" style="font-size: 13px; color: #666; margin-top: 10px; font-weight: 600;"></p>
                             </div>
                         `;
 
-                        // === ФАЗА 2: ЛОГІКА КНОПКИ УНІКАЛІЗАЦІЇ ===
                         document.getElementById('btnUniqueize').onclick = async function() {
                             const uBtn = this;
                             const uStatus = document.getElementById('uniqueStatus');
                             uBtn.disabled = true;
-                            uStatus.innerText = "⏳ Обробка FFmpeg... (може зайняти хвилину)";
+                            uStatus.innerText = "⚙️ FFmpeg працює... Змінюємо метадані та пікселі (до 60 сек)";
 
                             try {
                                 const uRes = await fetch('/uniqueize', {
@@ -255,49 +257,49 @@
                                     body: JSON.stringify({ video_url: data.video_url })
                                 });
 
-                                if (!uRes.ok) throw new Error("Помилка FFmpeg");
+                                if (!uRes.ok) throw new Error("Сервер не зміг обробити відео. Ймовірно, мало пам'яті.");
                                 const uData = await uRes.json();
 
-                                uStatus.innerText = "✅ Готово!";
+                                uStatus.innerText = "🚀 Успішно! Відео готові до завантаження.";
                                 
-                                // Виводимо 3 плеєри
                                 resultDiv.innerHTML = `
-                                    <div class="video-grid">
-                                        <div class="video-card">
-                                            <h3>🎵 TikTok</h3>
-                                            <video controls autoplay loop muted><source src="${uData.tiktok}" type="video/mp4"></video>
-                                            <a href="${uData.tiktok}" download class="action-btn">⬇️ Завантажити</a>
-                                        </div>
-                                        <div class="video-card">
-                                            <h3>📸 Instagram</h3>
-                                            <video controls autoplay loop muted><source src="${uData.insta}" type="video/mp4"></video>
-                                            <a href="${uData.insta}" download class="action-btn">⬇️ Завантажити</a>
-                                        </div>
-                                        <div class="video-card">
-                                            <h3>▶️ YouTube Shorts</h3>
-                                            <video controls autoplay loop muted><source src="${uData.youtube}" type="video/mp4"></video>
-                                            <a href="${uData.youtube}" download class="action-btn">⬇️ Завантажити</a>
-                                        </div>
+                                    <div class="video-card">
+                                        <h3>🎵 TikTok</h3>
+                                        <video controls loop muted><source src="${uData.tiktok}" type="video/mp4"></video>
+                                        <a href="${uData.tiktok}" download class="action-btn">⬇️ Завантажити</a>
+                                    </div>
+                                    <div class="video-card">
+                                        <h3>📸 Instagram</h3>
+                                        <video controls loop muted><source src="${uData.insta}" type="video/mp4"></video>
+                                        <a href="${uData.insta}" download class="action-btn">⬇️ Завантажити</a>
+                                    </div>
+                                    <div class="video-card">
+                                        <h3>▶️ YouTube Shorts</h3>
+                                        <video controls loop muted><source src="${uData.youtube}" type="video/mp4"></video>
+                                        <a href="${uData.youtube}" download class="action-btn">⬇️ Завантажити</a>
                                     </div>
                                 `;
                                 saveToGallery(prompt, uData);
                             } catch (err) {
-                                uStatus.innerText = "❌ Помилка: " + err.message;
+                                uStatus.innerText = "❌ Помилка FFmpeg: " + err.message;
                                 uBtn.disabled = false;
                             }
                         };
                     } else if (checkRes.status === 202) {
-                        status.innerText = `⏳ ${data.status}`;
+                        status.innerText = `⏳ Статус: ${data.status}...`;
                     } else if (checkRes.status === 500) {
                          clearInterval(pollInterval); 
-                         status.innerText = `❌ Помилка: ${data.error || 'Невідомий збій на сервері'}`; 
+                         status.innerText = `❌ Помилка сервера: ${data.error}`; 
                          btn.disabled = false;
-                         progressContainer.style.display = 'none';
                     }
-                } catch (e) { console.error("Помилка опитування:", e); }
+                } catch (e) { console.error("Помилка:", e); }
             }, 5000);
 
         } catch (e) {
-            status.innerText = "❌ Помилка: " + e.message; btn.disabled = false; progressContainer.style.display = 'none';
+            status.innerText = "❌ Помилка: " + e.message; 
+            btn.disabled = false;
         }
     };
+</script>
+</body>
+</html>
